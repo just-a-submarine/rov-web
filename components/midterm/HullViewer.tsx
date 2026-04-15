@@ -235,7 +235,7 @@ function ROVHull() {
 
 export function HullViewer() {
   return (
-    <div className="w-full rounded-2xl overflow-hidden glass" style={{ height: 360 }}>
+    <div className="w-full rounded-2xl overflow-hidden glass" style={{ height: "clamp(220px, 40vh, 360px)" }}>
       <Canvas
         camera={{ position: [2.8, 1.2, 2.8], fov: 40 }}
         shadows

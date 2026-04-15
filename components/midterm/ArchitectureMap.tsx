@@ -27,8 +27,8 @@ export function ArchitectureMap() {
         <h2 className="text-3xl sm:text-4xl font-bold text-foreground">通訊架構</h2>
       </div>
 
-      {/* Diagram */}
-      <div className="relative w-full max-w-3xl" style={{ height: 300 }}>
+      {/* ── 桌面版：SVG 動態連線圖 ── */}
+      <div className="relative w-full max-w-3xl hidden md:block" style={{ height: 300 }}>
         <svg className="absolute inset-0 w-full h-full" viewBox="0 0 800 300" preserveAspectRatio="xMidYMid meet">
 
           {/* Xbox → GS: USB 有線連接 (vertical dashed, amber) */}
@@ -120,6 +120,32 @@ export function ArchitectureMap() {
             <p className="text-sm font-bold whitespace-nowrap" style={{ color: node.accent }}>{node.label}</p>
             <p className="text-xs text-muted font-mono mt-0.5 whitespace-nowrap">{node.sub}</p>
           </motion.div>
+        ))}
+      </div>
+
+      {/* ── 手機版：純卡片流程 ── */}
+      <div className="flex md:hidden flex-col items-center gap-2 w-full max-w-xs">
+        {[
+          { label: "Xbox 控制器", sub: "USB 有線", accent: "#FBBF24", arrow: "↓" },
+          { label: "地面站",      sub: "ESP32-S3 熱點", accent: "#22D3EE", arrow: "↕ ESP-NOW" },
+          { label: "ROV",         sub: "水下載具", accent: "#A78BFA", arrow: "→ 影像串流" },
+          { label: "手機瀏覽器",  sub: "WebSocket + 影像", accent: "#6EE7B7", arrow: null },
+        ].map((node, i) => (
+          <div key={node.label} className="flex flex-col items-center w-full">
+            <motion.div
+              initial={{ opacity: 0, x: -12 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.1 }}
+              viewport={{ once: true }}
+              className="glass rounded-xl px-5 py-3 text-center w-full"
+            >
+              <p className="text-sm font-bold" style={{ color: node.accent }}>{node.label}</p>
+              <p className="text-xs text-muted font-mono mt-0.5">{node.sub}</p>
+            </motion.div>
+            {node.arrow && (
+              <p className="text-xs font-mono text-muted py-1">{node.arrow}</p>
+            )}
+          </div>
         ))}
       </div>
 

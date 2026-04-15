@@ -12,10 +12,10 @@ const flowNodes = [
 ];
 
 const specs = [
-  { value: "1 m",    label: "操作水深",   accent: "#22D3EE" },
-  { value: "200 m",  label: "無線距離",   accent: "#A78BFA" },
-  { value: "GPS",    label: "自動導航",   accent: "#FBBF24" },
-  { value: "即時影像串流",  label: "即時影像",   accent: "#6EE7B7" },
+  { value: "1 m",      label: "操作水深",  accent: "#22D3EE", textClass: "text-3xl" },
+  { value: "200 m",    label: "無線距離",  accent: "#A78BFA", textClass: "text-3xl" },
+  { value: "GPS",      label: "自動導航",  accent: "#FBBF24", textClass: "text-3xl" },
+  { value: "影像串流",  label: "OV5640 直連", accent: "#6EE7B7", textClass: "text-xl sm:text-2xl" },
 ];
 
 export function MissionScene() {
@@ -80,7 +80,7 @@ export function MissionScene() {
             viewport={{ once: true }}
             className="glass rounded-2xl p-5 text-center"
           >
-            <p className="text-3xl font-bold font-mono" style={{ color: s.accent }}>{s.value}</p>
+            <p className={`${s.textClass} font-bold font-mono whitespace-nowrap`} style={{ color: s.accent }}>{s.value}</p>
             <p className="text-xs text-foreground mt-1">{s.label}</p>
           </motion.div>
         ))}

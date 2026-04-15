@@ -7,7 +7,6 @@ import { PropulsionSection } from "@/components/midterm/PropulsionSection";
 import { SensorsSection } from "@/components/midterm/SensorsSection";
 import { ArchitectureMap } from "@/components/midterm/ArchitectureMap";
 import { CurrentState } from "@/components/midterm/CurrentState";
-import { Roadmap } from "@/components/midterm/Roadmap";
 import { Logo } from "@/components/brand/Logo";
 
 export const metadata: Metadata = { title: "期中報告" };
@@ -20,8 +19,7 @@ const sections = [
   { id: "model",      label: "3D 模型" },
   { id: "propulsion", label: "推進系統" },
   { id: "comms",      label: "感測器 × 通訊" },
-  { id: "state",      label: "進度" },
-  { id: "roadmap",    label: "Roadmap" },
+  { id: "state",      label: "進度·Roadmap" },
 ];
 
 export default function MidtermPage() {
@@ -89,14 +87,9 @@ export default function MidtermPage() {
         <ArchitectureMap />
       </SlideSection>
 
-      {/* ⑦ Current State */}
+      {/* ⑦ Current State + Roadmap */}
       <SlideSection id="state">
         <CurrentState />
-      </SlideSection>
-
-      {/* ⑧ Roadmap */}
-      <SlideSection id="roadmap">
-        <Roadmap />
       </SlideSection>
     </div>
   );
