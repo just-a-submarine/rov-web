@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { HullViewer } from "./HullViewer";
 
 export function FreeCADShowcase() {
@@ -20,6 +21,27 @@ export function FreeCADShowcase() {
           <span className="text-muted/50 ml-1">（示意圖）</span>
         </p>
         <HullViewer />
+      </div>
+
+      {/* 3D 列印過程照片 */}
+      <div className="grid grid-cols-2 gap-4 w-full max-w-2xl">
+        {[
+          { src: "/images/3D列印01.jpg", alt: "3D 列印過程（一）", label: "列印中" },
+          { src: "/images/3D列印02.jpg", alt: "3D 列印過程（二）", label: "脫板後" },
+        ].map((photo) => (
+          <div key={photo.src} className="flex flex-col gap-2">
+            <p className="text-xs font-mono text-muted">{photo.label}</p>
+            <div className="glass rounded-xl overflow-hidden">
+              <Image
+                src={photo.src}
+                alt={photo.alt}
+                width={600}
+                height={400}
+                className="w-full h-auto object-cover"
+              />
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

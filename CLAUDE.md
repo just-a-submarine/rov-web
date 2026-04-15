@@ -91,12 +91,19 @@ GitHub Organization（預設名 `just-a-submarine`，改在 `lib/site.ts`）。
 
 ---
 
+## 已上傳素材
+
+| 檔案 | 路徑 | 用途 |
+|---|---|---|
+| 3D列印01.jpg | `public/images/3D列印01.jpg` | FreeCADShowcase 列印過程照片（左） |
+| 3D列印02.jpg | `public/images/3D列印02.jpg` | FreeCADShowcase 列印過程照片（右） |
+| 實物照片.jpg | `public/images/實物照片.jpg` | CurrentState 外殼展示實物照片 |
+
 ## 素材待補
 
 | 項目 | 說明 |
 |---|---|
-| 實物照片 | 拍攝後存入 `public/images/hull-midterm.jpg`，取消 `CurrentState.tsx` 的 placeholder |
-| ROV STL 模型 | 從 `doc/3D列印/V4/ROV_Hull.stl` 複製到 `public/models/ROV_Hull.stl`（建好後 3D 互動即生效） |
+| ROV STL 模型 | 從 `secret/3D列印/` 匯出 STL 後複製到 `public/models/ROV_Hull.stl`（建好後 3D 互動即生效） |
 | QR 正式網址 | 部署後自動從 `window.location.href` 讀取，不需改程式碼 |
 
 ---

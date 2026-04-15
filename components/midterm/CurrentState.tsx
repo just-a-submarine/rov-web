@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { motion } from "framer-motion";
 
 const milestones = [
@@ -74,20 +75,17 @@ export function CurrentState() {
           </div>
         </div>
 
-        {/* Photo placeholder */}
+        {/* Photo */}
         <div className="flex flex-col gap-3">
           <p className="text-xs font-mono text-muted">外殼展示</p>
-          <div
-            className="glass rounded-2xl overflow-hidden flex items-center justify-center"
-            style={{ minHeight: 240 }}
-          >
-            <div className="flex flex-col items-center gap-3 text-center p-8">
-              <div className="text-4xl opacity-40">📷</div>
-              <p className="text-muted text-xs">實物照片</p>
-              <p className="text-xs font-mono text-muted/50">
-                public/images/hull-midterm.jpg
-              </p>
-            </div>
+          <div className="glass rounded-2xl overflow-hidden">
+            <Image
+              src="/images/實物照片.jpg"
+              alt="ROV 外殼實物照片"
+              width={800}
+              height={600}
+              className="w-full h-auto object-cover"
+            />
           </div>
         </div>
       </div>
