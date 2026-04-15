@@ -31,6 +31,15 @@ export const repos: Repo[] = [
     tech: ["Next.js", "TypeScript", "Tailwind"],
   },
   {
+    id: "3d-printing",
+    name: "3D-printing",
+    nameZh: "3D 列印模型",
+    description: "ROV 艇體與零件的 FreeCAD 原始檔、STL 匯出與切片參數",
+    url: "https://github.com/just-a-submarine/3D-printing",
+    status: "available",
+    tech: ["FreeCAD", "STL", "Bambu Studio"],
+  },
+  {
     id: "rov-firmware",
     name: "rov-firmware",
     nameZh: "ROV 韌體",
