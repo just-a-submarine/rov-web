@@ -1,10 +1,15 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import { Logo } from "@/components/brand/Logo";
-import { BubbleField } from "@/components/home/BubbleField";
 import { NavGrid } from "@/components/home/NavGrid";
 import { QRCorner } from "@/components/nav/QRCorner";
+
+const BubbleField = dynamic(
+  () => import("@/components/home/BubbleField").then((m) => m.BubbleField),
+  { ssr: false }
+);
 
 export default function HomePage() {
   return (

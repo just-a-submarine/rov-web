@@ -1,8 +1,9 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useMemo } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
+import * as THREE from "three";
 
 /**
  * ROV Hull 3D model — corrected to match actual build photos + FreeCAD spec.
@@ -18,9 +19,9 @@ import { OrbitControls } from "@react-three/drei";
  *   Obs dome      : Z=170 → X=+0.36, Y+ — white epoxy ring + clear PS hemisphere
  *   Cable chimney : Z=90  → X=–0.28, Y+
  *   Vert motor    : Z=125 → X=0, Y– — single vertical thruster
- *   Horiz arms    : Z=144–194 center Z=169 → X=+0.352, each ±Z=0.655
- *   Motors        : shaft along X (hull axis), embedded from arm's rear face (X=+0.152),
- *                   exposed portion X=–0.088 to X=+0.152, propeller at X≈–0.09
+ *   Horiz arms    : Z=144–194 center Z=169 → X=+0.36, each ±Z=0.655
+ *   Motors        : shaft along X (protruding toward –X/rear), embedded 0.065 inside arm, protruding 0.195 outside,
+ *                   propeller just outside motor end face (same pattern as vertical motor)
  *   Tail fins     : Z=19–69 → X=–0.648, ±Z sides
  */
 function ROVHull() {
@@ -28,6 +29,77 @@ function ROVHull() {
   const GREY_D = "#5C6E80";   // darker mount parts
   const BLACK  = "#1C1C1C";   // motors / O-rings
   const EPOXY  = "#C8CDD2";   // white epoxy / PP clips
+
+  // 右尾翼：世界座標直接定義，不用旋轉
+  // 直角在 A（後緣根部），斜邊 B→C（前緣，後掠）
+  // A = 後緣根部 (-0.848, 0, +0.45)
+  // B = 前緣根部 (-0.448, 0, +0.45)
+  // C = 翼尖       (-0.848, 0, +0.75)
+  const rightFinGeometry = useMemo(() => {
+    const t = 0.04; // 半厚度
+    const vertices = new Float32Array([
+      // 底面 (Y = -t)
+      -0.848, -t, 0.45,  // 0: A bottom
+      -0.448, -t, 0.45,  // 1: B bottom
+      -0.848, -t, 0.75,  // 2: C bottom
+      // 頂面 (Y = +t)
+      -0.848,  t, 0.45,  // 3: A top
+      -0.448,  t, 0.45,  // 4: B top
+      -0.848,  t, 0.75,  // 5: C top
+    ]);
+    const indices = [
+      // 頂面 (Y=+t, 法線 +Y)
+      3, 5, 4,
+      // 底面 (Y=-t, 法線 -Y)
+      0, 1, 2,
+      // 內側面 (Z=+0.45, 法線 -Z，朝向艙體)
+      0, 3, 4,  0, 4, 1,
+      // 後緣 (X=-0.848, 法線 -X)
+      0, 2, 5,  0, 5, 3,
+      // 斜邊/前緣 (B→C, 法線朝外)
+      1, 4, 5,  1, 5, 2,
+    ];
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+    geo.setIndex(indices);
+    geo.computeVertexNormals();
+    return geo;
+  }, []);
+
+  // 左尾翼：世界座標直接定義，不用旋轉
+  // A = 後緣根部 (-0.848, 0, -0.45)
+  // B = 前緣根部 (-0.448, 0, -0.45)
+  // C = 翼尖       (-0.848, 0, -0.75)
+  const leftFinGeometry = useMemo(() => {
+    const t = 0.04;
+    const vertices = new Float32Array([
+      // 底面 (Y = -t)
+      -0.848, -t, -0.45,  // 0: A bottom
+      -0.448, -t, -0.45,  // 1: B bottom
+      -0.848, -t, -0.75,  // 2: C bottom
+      // 頂面 (Y = +t)
+      -0.848,  t, -0.45,  // 3: A top
+      -0.448,  t, -0.45,  // 4: B top
+      -0.848,  t, -0.75,  // 5: C top
+    ]);
+    const indices = [
+      // 頂面 (Y=+t, 法線 +Y)
+      3, 4, 5,
+      // 底面 (Y=-t, 法線 -Y)
+      0, 2, 1,
+      // 內側面 (Z=-0.45, 法線 +Z，朝向艙體)
+      0, 1, 4,  0, 4, 3,
+      // 後緣 (X=-0.848, 法線 -X)
+      0, 3, 5,  0, 5, 2,
+      // 斜邊/前緣 (B→C, 法線朝外)
+      1, 2, 5,  1, 5, 4,
+    ];
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+    geo.setIndex(indices);
+    geo.computeVertexNormals();
+    return geo;
+  }, []);
 
   return (
     <group>
@@ -113,48 +185,48 @@ function ROVHull() {
       </mesh>
 
       {/* ── Right horizontal motor arm (+Z) ── */}
-      {/* Arm box: 40(X)×38(Y)×41(Z) mm, center X=0.352, Z=0.655 */}
-      <mesh position={[0.352, 0, 0.655]}>
-        <boxGeometry args={[0.40, 0.38, 0.41]} />
+      {/* Arm box: 50(X)×38(Y)×41(Z) mm, center X=0.36, Z=0.655, Z range 0.45–0.86 */}
+      <mesh position={[0.36, 0, 0.655]}>
+        <boxGeometry args={[0.50, 0.38, 0.41]} />
         <meshStandardMaterial color={GREY} roughness={0.75} metalness={0.0} />
       </mesh>
-      {/* Right motor body (shaft along X hull axis, at arm outer tip Z=0.86)
-          Embedded: X=0.152→0.392 inside arm  |  Exposed: X=–0.088→0.152 behind arm */}
-      <mesh position={[0.152, 0, 0.86]} rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[0.155, 0.155, 0.48, 24]} />
+      {/* Right motor body (shaft along X, protruding toward –X/rear, same embed pattern as vertical motor)
+          Embedded 0.065 inside arm (X=0.11–0.175), protruding 0.195 outside (X=–0.085–0.11) */}
+      <mesh position={[0.045, 0, 0.655]} rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[0.155, 0.155, 0.26, 24]} />
         <meshStandardMaterial color={BLACK} roughness={0.45} metalness={0.55} />
       </mesh>
-      {/* Right propeller (at rear face of motor, X≈–0.088, facing –X = generates forward thrust) */}
-      <mesh position={[-0.09, 0, 0.86]} rotation={[0, 0, Math.PI / 2]}>
+      {/* Right propeller (just outside motor end face X≈–0.085, facing –X = generates forward thrust) */}
+      <mesh position={[-0.095, 0, 0.655]} rotation={[0, 0, -Math.PI / 2]}>
         <cylinderGeometry args={[0.21, 0.02, 0.025, 3]} />
         <meshStandardMaterial color={BLACK} roughness={0.4} metalness={0.3} />
       </mesh>
 
       {/* ── Left horizontal motor arm (–Z) ── */}
-      <mesh position={[0.352, 0, -0.655]}>
-        <boxGeometry args={[0.40, 0.38, 0.41]} />
+      {/* Arm Z range –0.86 to –0.45 */}
+      <mesh position={[0.36, 0, -0.655]}>
+        <boxGeometry args={[0.50, 0.38, 0.41]} />
         <meshStandardMaterial color={GREY} roughness={0.75} metalness={0.0} />
       </mesh>
-      <mesh position={[0.152, 0, -0.86]} rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[0.155, 0.155, 0.48, 24]} />
+      {/* Left motor body (shaft along X, protruding toward –X/rear, embedded 0.065 inside arm, protruding 0.195 outside) */}
+      <mesh position={[0.045, 0, -0.655]} rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[0.155, 0.155, 0.26, 24]} />
         <meshStandardMaterial color={BLACK} roughness={0.45} metalness={0.55} />
       </mesh>
-      <mesh position={[-0.09, 0, -0.86]} rotation={[0, 0, Math.PI / 2]}>
+      {/* Left propeller (just outside motor end face X≈–0.085, facing –X = generates forward thrust) */}
+      <mesh position={[-0.095, 0, -0.655]} rotation={[0, 0, -Math.PI / 2]}>
         <cylinderGeometry args={[0.21, 0.02, 0.025, 3]} />
         <meshStandardMaterial color={BLACK} roughness={0.4} metalness={0.3} />
       </mesh>
 
-      {/* ── Right tail fin (+Z) — Z=19–69 → X=–0.848 to –0.448, center X=–0.648 ── */}
-      {/* Fin extends 30mm outward: from hull wall Z=0.45 to Z=0.75, center Z=0.60 */}
-      <mesh position={[-0.648, 0, 0.60]}>
-        <boxGeometry args={[0.40, 0.04, 0.30]} />
-        <meshStandardMaterial color={GREY_D} roughness={0.70} metalness={0.0} />
+      {/* ── Right tail fin (+Z) — world-coord BufferGeometry, no transform ── */}
+      <mesh geometry={rightFinGeometry}>
+        <meshStandardMaterial color={GREY_D} roughness={0.70} metalness={0.0} side={THREE.DoubleSide} />
       </mesh>
 
-      {/* ── Left tail fin (–Z) ── */}
-      <mesh position={[-0.648, 0, -0.60]}>
-        <boxGeometry args={[0.40, 0.04, 0.30]} />
-        <meshStandardMaterial color={GREY_D} roughness={0.70} metalness={0.0} />
+      {/* ── Left tail fin (–Z) — world-coord BufferGeometry, no transform ── */}
+      <mesh geometry={leftFinGeometry}>
+        <meshStandardMaterial color={GREY_D} roughness={0.70} metalness={0.0} side={THREE.DoubleSide} />
       </mesh>
 
     </group>
@@ -179,10 +251,6 @@ export function HullViewer() {
         {/* Accent fills */}
         <pointLight position={[-3, -2, -3]} intensity={0.5} color="#A78BFA" />
         <pointLight position={[3, 2, -2]}  intensity={0.4} color="#22D3EE" />
-
-        {/* Rim light to show transparent end caps */}
-        <pointLight position={[0, 0, 4]}  intensity={0.6} color="#BFDBFE" />
-        <pointLight position={[0, 0, -4]} intensity={0.6} color="#BFDBFE" />
 
         <Suspense fallback={null}>
           <ROVHull />

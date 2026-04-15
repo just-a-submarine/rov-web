@@ -17,6 +17,7 @@ export function FreeCADShowcase() {
         <p className="text-xs text-muted font-mono mb-2 flex items-center gap-1.5">
           <span className="w-1.5 h-1.5 rounded-full bg-accent-cyan inline-block" />
           ROV_Hull.FCStd — 可拖曳旋轉
+          <span className="text-muted/50 ml-1">（示意圖）</span>
         </p>
         <HullViewer />
       </div>
