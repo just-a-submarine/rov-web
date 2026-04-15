@@ -8,6 +8,17 @@ interface Props {
   params: Promise<{ slug: string }>;
 }
 
+function TableWrapper(props: React.ComponentPropsWithoutRef<"table">) {
+  const { style, ...rest } = props;
+  return (
+    <div style={{ overflowX: "auto", marginBottom: "1.2rem" }}>
+      <table style={{ ...style, marginBottom: 0 }} {...rest} />
+    </div>
+  );
+}
+
+const components = { table: TableWrapper };
+
 export async function generateStaticParams() {
   return getAllDocsMeta().map((doc) => ({ slug: doc.slug }));
 }
@@ -34,6 +45,7 @@ export default async function DocPage({ params }: Props) {
         <MDXRemote
           source={doc.content}
           options={{ mdxOptions: { remarkPlugins: [remarkGfm] } }}
+          components={components}
         />
       </div>
     </article>

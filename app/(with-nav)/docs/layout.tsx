@@ -5,7 +5,7 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
   const docs = getAllDocsMeta();
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-10 flex gap-8">
+    <div className="max-w-6xl mx-auto px-4 py-8 md:py-10 flex flex-col md:flex-row gap-6 md:gap-8">
       {/* Sidebar */}
       <Sidebar docs={docs} />
 
