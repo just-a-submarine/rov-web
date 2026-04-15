@@ -1,9 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  output: "export",
   pageExtensions: ["ts", "tsx", "md", "mdx"],
   images: {
-    formats: ["image/avif", "image/webp"],
+    unoptimized: true,
   },
   transpilePackages: ["three", "@react-three/fiber", "@react-three/drei"],
 };
