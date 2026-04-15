@@ -4,20 +4,20 @@ import { motion } from "framer-motion";
 
 /**
  * Communication architecture:
- *   Xbox → GS: USB HID (physical controller input)
+ *   Xbox → GS: USB 有線連接（實體控制器輸入）
  *   Phone ↔ GS: WebSocket (control UI + telemetry relay)
  *   GS → ROV: ESP-NOW 100 Hz (control downlink)
  *   ROV → GS: ESP-NOW 5 Hz (telemetry uplink)
- *   ROV → Phone: MJPEG direct (video stream)
+ *   ROV → Phone: 即時影像串流
  */
 
 const mainNodes = [
-  { id: "phone", label: "手機瀏覽器", sub: "WebSocket / MJPEG", x: "10%", y: "55%", accent: "#6EE7B7" },
-  { id: "gs",    label: "地面站",     sub: "ESP32-S3 · AP",    x: "50%", y: "55%", accent: "#22D3EE" },
-  { id: "rov",   label: "ROV",        sub: "ESP32-S3 · STA",   x: "90%", y: "55%", accent: "#A78BFA" },
+  { id: "phone", label: "手機瀏覽器", sub: "WebSocket / 即時影像串流", x: "10%", y: "55%", accent: "#6EE7B7" },
+  { id: "gs",    label: "地面站",     sub: "ESP32-S3 · 熱點",    x: "50%", y: "55%", accent: "#22D3EE" },
+  { id: "rov",   label: "ROV",        sub: "ESP32-S3 · 連線",   x: "90%", y: "55%", accent: "#A78BFA" },
 ];
 
-const topNode = { id: "xbox", label: "Xbox 控制器", sub: "USB HID", x: "50%", y: "14%", accent: "#FBBF24" };
+const topNode = { id: "xbox", label: "Xbox 控制器", sub: "USB 有線連接", x: "50%", y: "14%", accent: "#FBBF24" };
 
 export function ArchitectureMap() {
   return (
@@ -31,7 +31,7 @@ export function ArchitectureMap() {
       <div className="relative w-full max-w-3xl" style={{ height: 300 }}>
         <svg className="absolute inset-0 w-full h-full" viewBox="0 0 800 300" preserveAspectRatio="xMidYMid meet">
 
-          {/* Xbox → GS: USB HID (vertical dashed, amber) */}
+          {/* Xbox → GS: USB 有線連接 (vertical dashed, amber) */}
           <motion.line x1="400" y1="58" x2="400" y2="138"
             stroke="#FBBF24" strokeWidth="1.8" strokeDasharray="5 4"
             initial={{ pathLength: 0, opacity: 0 }}
@@ -39,7 +39,7 @@ export function ArchitectureMap() {
             transition={{ duration: 0.6, delay: 0.1 }}
             viewport={{ once: true }}
           />
-          <text x="415" y="102" fill="#FBBF24" fontSize="10" fontFamily="monospace">USB HID</text>
+          <text x="415" y="102" fill="#FBBF24" fontSize="10" fontFamily="monospace">USB 有線連接</text>
 
           {/* Phone ↔ GS: WebSocket (upper dashed, green) */}
           <motion.line x1="140" y1="148" x2="355" y2="148"
@@ -67,7 +67,7 @@ export function ArchitectureMap() {
             transition={{ duration: 0.9, delay: 0.5 }}
             viewport={{ once: true }}
           />
-          <text x="553" y="138" textAnchor="middle" fill="#22D3EE" fontSize="11" fontFamily="monospace">ESP-NOW</text>
+          <text x="553" y="138" textAnchor="middle" fill="#22D3EE" fontSize="11" fontFamily="monospace">ESP-NOW 無線控制</text>
           <text x="553" y="176" textAnchor="middle" fill="#22D3EE" fontSize="9" fontFamily="monospace" opacity={0.65}>↓100Hz · ↑5Hz</text>
 
           {/* Phone → ROV: MJPEG (lower arc, pink) */}
@@ -78,7 +78,7 @@ export function ArchitectureMap() {
             transition={{ duration: 1.2, delay: 0.6 }}
             viewport={{ once: true }}
           />
-          <text x="400" y="268" textAnchor="middle" fill="#F9A8D4" fontSize="10" fontFamily="monospace">MJPEG 直連</text>
+          <text x="400" y="268" textAnchor="middle" fill="#F9A8D4" fontSize="10" fontFamily="monospace">即時影像串流</text>
 
           {/* Animated data packet: GS → ROV (control, fast) */}
           <motion.circle r="5" cy={143} fill="#22D3EE"
@@ -126,10 +126,10 @@ export function ArchitectureMap() {
       {/* Legend */}
       <div className="flex flex-wrap gap-5 justify-center text-xs font-mono">
         {[
-          { color: "#FBBF24", label: "USB HID 輸入", dashed: true },
+          { color: "#FBBF24", label: "USB 有線連接", dashed: true },
           { color: "#6EE7B7", label: "WebSocket 控制 / 遙測中繼", dashed: true },
-          { color: "#22D3EE", label: "ESP-NOW ↓控制 100Hz · ↑遙測 5Hz", dashed: false },
-          { color: "#F9A8D4", label: "MJPEG 影像直連", dashed: true },
+          { color: "#22D3EE", label: "ESP-NOW 無線控制 ↓控制 100Hz · ↑遙測 5Hz", dashed: false },
+          { color: "#F9A8D4", label: "即時影像串流", dashed: true },
         ].map((l) => (
           <div key={l.label} className="flex items-center gap-2">
             <svg width="24" height="8" viewBox="0 0 24 8">

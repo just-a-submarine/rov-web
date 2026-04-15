@@ -15,7 +15,7 @@ const specs = [
   { value: "1 m",    label: "操作水深",   accent: "#22D3EE" },
   { value: "200 m",  label: "無線距離",   accent: "#A78BFA" },
   { value: "GPS",    label: "自動導航",   accent: "#FBBF24" },
-  { value: "MJPEG",  label: "即時影像",   accent: "#6EE7B7" },
+  { value: "即時影像串流",  label: "即時影像",   accent: "#6EE7B7" },
 ];
 
 export function MissionScene() {
@@ -65,7 +65,7 @@ export function MissionScene() {
           ))}
         </div>
         <p className="text-center text-xs text-muted/50 font-mono mt-3">
-          影像直連 ROV → 手機（MJPEG，不過地面站）
+          影像直連 ROV → 手機（不過地面站）
         </p>
       </div>
 
