@@ -39,3 +39,6 @@ next-env.d.ts
 # Project-specific: 專案內部文件不提交（含規格書、計畫、3D 檔案）
 secret/
 
+
+.vercel
+.playwright-mcp/
