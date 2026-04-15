@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Menu, X, Github } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
-import { QRCorner } from "@/components/nav/QRCorner";
 import { site } from "@/lib/site";
 
 const navLinks = [
@@ -58,8 +57,6 @@ export function TopNav() {
           >
             <Github size={15} />
           </a>
-          <QRCorner />
-
           {/* Mobile hamburger */}
           <button
             className="md:hidden w-8 h-8 flex items-center justify-center rounded border border-border text-muted hover:text-foreground transition-colors"
