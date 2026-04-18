@@ -17,6 +17,9 @@ export const NUM_BANDS = BAND_INDICES.length;
 
 export type VoiceState = "idle" | "listening" | "processing";
 
+const isMobileDevice =
+  typeof navigator !== "undefined" && navigator.maxTouchPoints > 1;
+
 export function useVoiceInput({ onResult, onError }: UseVoiceInputOptions) {
   const [voiceState, setVoiceState] = useState<VoiceState>("idle");
   const [bands, setBands] = useState<number[]>(Array(NUM_BANDS).fill(0));
@@ -30,6 +33,7 @@ export function useVoiceInput({ onResult, onError }: UseVoiceInputOptions) {
   const dataArrayRef = useRef<Uint8Array<ArrayBuffer> | null>(null);
 
   const isSupported =
+    !isMobileDevice &&
     typeof window !== "undefined" &&
     ("SpeechRecognition" in window || "webkitSpeechRecognition" in window);
 
@@ -77,15 +81,17 @@ export function useVoiceInput({ onResult, onError }: UseVoiceInputOptions) {
       // getUserMedia 失敗時仍繼續，無波形
     }
 
-    // SpeechRecognition — continuous 模式
+    // SpeechRecognition
+    // 手機用 continuous: false（更穩定）；桌面用 continuous: true（可說多句）
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const SR: any = window.SpeechRecognition ?? window.webkitSpeechRecognition;
     const recognition = new SR();
     recognition.lang = "zh-TW";
-    recognition.continuous = true;
+    recognition.continuous = !isMobileDevice;
     recognition.interimResults = true;
 
     let finalTranscript = "";
+    let lastInterimTranscript = "";
 
     recognition.onresult = (e: {
       results: SpeechRecognitionResultList;
@@ -94,6 +100,8 @@ export function useVoiceInput({ onResult, onError }: UseVoiceInputOptions) {
       for (let i = e.resultIndex; i < e.results.length; i++) {
         if (e.results[i].isFinal) {
           finalTranscript += e.results[i][0].transcript;
+        } else {
+          lastInterimTranscript = e.results[i][0].transcript;
         }
       }
     };
@@ -104,11 +112,12 @@ export function useVoiceInput({ onResult, onError }: UseVoiceInputOptions) {
       setVoiceState("idle");
     };
 
-    // onend：手動 stop 後觸發 → 送出文字 → 回到 idle
+    // onend：手動 stop 或手機 auto-stop 後觸發
+    // 若沒有 isFinal 結果（手機常見），嘗試用最後的 interim
     recognition.onend = () => {
-      if (finalTranscript.trim()) {
-        onResult(finalTranscript.trim());
-      }
+      const result = finalTranscript.trim() || lastInterimTranscript.trim();
+      if (result) onResult(result);
+      stopAnalyser();
       setVoiceState("idle");
     };
 
