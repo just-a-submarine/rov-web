@@ -18,7 +18,8 @@ export const NUM_BANDS = BAND_INDICES.length;
 export type VoiceState = "idle" | "listening" | "processing";
 
 const isMobileDevice =
-  typeof navigator !== "undefined" && navigator.maxTouchPoints > 1;
+  typeof navigator !== "undefined" &&
+  /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
 export function useVoiceInput({ onResult, onError }: UseVoiceInputOptions) {
   const [voiceState, setVoiceState] = useState<VoiceState>("idle");
