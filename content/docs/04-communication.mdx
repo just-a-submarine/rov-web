@@ -1,7 +1,8 @@
 ---
 title: "04 通訊架構"
-description: "ESP-NOW、Wi-Fi、WebSocket"
+description: "ESP-NOW、WebSocket、遙測協定與封包格式"
 order: 4
+category: "電子與軟體"
 ---
 
 
@@ -9,30 +10,38 @@ order: 4
 
 ## 一、整體架構總覽
 
+本系統採用三層通訊：手機透過 WebSocket 雙向傳送控制指令與接收遙測；地面站 ESP32 做中繼，再以 ESP-NOW 低延遲無線轉發給 ROV；影像串流則從 ROV 直連手機，完全不經地面站。
+
 ### 網路拓樸
 
 ```
-手機瀏覽器
-  ├─ WebSocket ──────────→ 地面站 ESP32（192.168.4.1）  遙測數據（5Hz）
-  ├─ HTTP POST ──────────→ 地面站 ESP32                  航點上傳
-  └─ MJPEG <img> ────────→ ROV ESP32（192.168.4.100）   影像直連（不經地面站）
+Xbox 手把 ──藍牙──→ 手機瀏覽器（Gamepad API 當控制器）
+                       ├─ WebSocket ──────→ 地面站 ESP32（192.168.4.1）  控制上行 + 遙測下行（5–10Hz）
+                       ├─ HTTP POST ──────→ 地面站 ESP32                  航點上傳
+                       └─ MJPEG <img> ────→ ROV ESP32（192.168.4.100）   影像直連（不經地面站）
 
 地面站 ESP32（純 AP，192.168.4.1）
-  └─ ESP-NOW ↕ ROV ESP32（STA，192.168.4.100）
+  └─ ESP-NOW ↕ ROV ESP32（STA，192.168.4.100）   控制/航點 ↓　遙測 ↑
 ```
+
+<Callout type="info">
+**控制來源已改**：手把不再接地面站。手把藍牙配對到**手機**，手機網頁用 Gamepad API 讀搖桿／按鍵，經 WebSocket 上行到地面站；地面站再以 ESP-NOW 轉發給 ROV。地面站 Bluepad32 僅保留 BTstack 入口、**拒絕手把藍牙連線**（手把直連地面站的 classic BT 會餓死 Wi-Fi AP，實測 AP stations=0）。
+</Callout>
 
 ### 各裝置職責
 
 | 裝置 | 負責 | 不負責 |
 |------|------|--------|
-| 地面站 ESP32 | SoftAP、WebSocket 推遙測、HTTP 接收航點、ESP-NOW 轉發、Xbox USB HID | 影像（完全不碰） |
-| ROV ESP32 | 馬達控制、感測器讀取、ESP-NOW 收發、MJPEG HTTP Server | — |
-| 手機瀏覽器 | 地圖、遙測顯示、航點設置、影像顯示 | — |
-| Xbox 手把 | 有線 USB HID 接地面站 ESP32，輸出搖桿與按鍵值 | — |
+| 地面站 ESP32 | SoftAP、WebSocket（收手機控制上行 + 推遙測）、HTTP 接收航點、ESP-NOW 轉發 | 影像（完全不碰）、手把藍牙（拒接） |
+| ROV ESP32 | 馬達控制、感測器讀取、ESP-NOW 收發、MJPEG HTTP Server（esp_http_server） | — |
+| 手機瀏覽器 | 地圖、遙測顯示、航點設置、影像顯示、**讀手把（Gamepad API）當控制器並經 WS 上行** | — |
+| Xbox 手把 | 藍牙連「手機」，由手機網頁 Gamepad API 讀取搖桿與按鍵值 | 不直連地面站 |
 
 ---
 
 ## 二、Wi-Fi 配置
+
+地面站與 ROV 的 Wi-Fi 模式需要嚴格配對，任何模式混用都可能導致 ESP-NOW 頻道衝突。
 
 ### 模式選擇
 
@@ -62,7 +71,7 @@ void setupWifi_GS() {
 ```cpp
 void setupWifi_ROV() {
     WiFi.mode(WIFI_STA);
-    WiFi.config(IPAddress(192,168,4,100),   // 固定 IP，手機 <img src> 不會失效
+    WiFi.config(IPAddress(192,168,4,100),   // 固定 IP，手機 img src 不會失效
                 IPAddress(192,168,4,1),     // Gateway = 地面站
                 IPAddress(255,255,255,0));
     WiFi.begin(AP_SSID, AP_PASS);
@@ -77,6 +86,8 @@ void setupWifi_ROV() {
 
 ## 三、ESP-NOW 配置
 
+ESP-NOW 是本系統控制鏈路的核心，延遲約 2 ms，空曠環境可達數百米。MAC 填錯會靜默失敗，是最常見的踩坑點，務必按下表核對。
+
 ### MAC 對應規則（最容易踩坑）
 
 ESP32 的 AP 介面與 STA 介面有不同 MAC（AP MAC = Base MAC 最後 byte + 1）。
@@ -88,7 +99,9 @@ ESP32 的 AP 介面與 STA 介面有不同 MAC（AP MAC = Base MAC 最後 byte +
 
 `peer.channel = 0` 表示跟隨本機當前頻道，最安全，不需硬填頻道號。
 
+<Callout type="warning">
 若頻道不匹配，ESP-NOW 會**靜默失敗**（send callback 回報 `ESP_NOW_SEND_FAIL`，無明確錯誤訊息）。
+</Callout>
 
 ### 地面站 ESP-NOW 初始化
 
@@ -156,7 +169,11 @@ struct TelemetryPacket {
     uint8_t  streamMode;       // ROV 確認回傳
     uint8_t  navWaypointIdx;   // 自動導航目標航點索引（0xFF = 未導航）
     float    navDistanceM;     // 距目標航點距離（公尺）
+    float    headingDeg;       // 校正後羅盤航向 0～360°（前端 marker 朝向；羅盤未上線時為 0）
+    float    magX;             // 原始（未校正）磁場 X，Gauss — 供手機端自動校準收 min/max
+    float    magY;             // 原始（未校正）磁場 Y，Gauss
     bool     photoAck;         // 拍照完成確認
+    bool     ledOn;            // 目前燈實際狀態（Y 鍵開或深度>5cm 自動開）
     uint8_t  msgType;          // 3=遙測
 } __attribute__((packed));
 ```
@@ -164,6 +181,8 @@ struct TelemetryPacket {
 ---
 
 ## 四、WebSocket 遙測
+
+遙測資料由地面站收到 ESP-NOW 封包後即時轉發給所有已連線的手機瀏覽器；同一條 WebSocket 也接收手機上行的控制 JSON。
 
 ### 地面站 WebSocket Server
 
@@ -184,9 +203,13 @@ void broadcastTelemetry(TelemetryPacket& pkt) {
     doc["bat"]       = pkt.batPct;
     doc["rssi"]      = pkt.rssi;
     doc["streamMode"]= pkt.streamMode;
+    doc["heading"]   = pkt.headingDeg;  // 校正後羅盤航向（marker 朝向 + 校準讀數）
+    doc["magX"]      = pkt.magX;        // 原始磁場 X/Y（Gauss）：手機端自動校準收 min/max
+    doc["magY"]      = pkt.magY;
     doc["navWpIdx"]  = pkt.navWaypointIdx;
     doc["navDistM"]  = pkt.navDistanceM;
     doc["photoAck"]  = pkt.photoAck;
+    doc["led"]       = pkt.ledOn;       // 燈實際狀態（手機顯示琥珀/灰）
 
     size_t len = measureJson(doc);
     auto *buf = ws.makeBuffer(len);
@@ -198,6 +221,42 @@ void broadcastTelemetry(TelemetryPacket& pkt) {
 ```
 
 推送頻率：**5–10Hz（200–100ms 間隔）**，超過 20Hz 會擠壓 ESP-NOW 無線電時間。
+
+### 控制上行（手機 → 地面站，同一條 WS）
+
+控制不再來自手把直連。手機網頁用 **Gamepad API** 輪詢（約 25Hz）讀手把搖桿／按鍵，打包成 JSON 經**同一條 WebSocket** 上行到地面站；地面站 `WS_EVT_DATA` 收到後存入遙控狀態（`gamepadSetRemote`），`readXboxAndSend()` 每輪從中取值做差速混控後以 ESP-NOW 送 ROV。
+
+<Callout type="warning">
+**安全模式 / Failsafe**：逾時（`GP_WS_TIMEOUT_MS` 500ms）未收到控制封包，即視為失聯 → 搖桿軸歸零、按鍵清除（中立保護），ROV 停止動作。
+</Callout>
+
+```javascript
+// 手機端：Gamepad API 輪詢 → WS 上行（lx/ly/ry：-32767~32767；buttons：bitmask）
+function pollGamepadAndSend() {
+    const gp = navigator.getGamepads()[0];
+    if (!gp || ws.readyState !== WebSocket.OPEN) return;
+    const ax = v => Math.round(v * 32767);
+    let btns = 0;
+    gp.buttons.forEach((b, i) => { if (b.pressed) btns |= (1 << i); });
+    ws.send(JSON.stringify({
+        t: 'ctl',
+        lx: ax(gp.axes[0]), ly: ax(gp.axes[1]), ry: ax(gp.axes[3]),
+        btns
+    }));
+}
+```
+
+```cpp
+// 地面站端：WS_EVT_DATA 收控制 JSON → gamepadSetRemote（gamepad.cpp 讀此值）
+void onWSData(uint8_t* data, size_t len) {
+    JsonDocument doc;
+    if (deserializeJson(doc, data, len)) return;
+    if (doc["t"] == "ctl")
+        gamepadSetRemote(doc["lx"], doc["ly"], doc["ry"], doc["btns"]);
+}
+```
+
+> 按鍵 bitmask 位元順序須與地面站 `GpButton` 列舉一致（A,B,X,Y,LB,RB,Start,Back）。
 
 ### 手機瀏覽器 WebSocket 自動重連
 
@@ -286,6 +345,8 @@ function updateNavStatus(wpIdx, distM) {
 
 ## 五、航點上傳
 
+航點上傳採 HTTP POST 而非 WebSocket，好處是有明確狀態碼回應，方便偵錯；封包大小超過 250 bytes 限制時則以 ESP-NOW 分塊轉發給 ROV。
+
 ### 採用 HTTP POST（非 WebSocket）
 
 航點上傳是一次性操作，HTTP POST 有明確狀態碼回應（200/400/500），比 WebSocket fire-and-forget 更可靠。
@@ -352,37 +413,54 @@ void sendWaypointsToROV() {
 
 ## 六、地圖與離線策略
 
-### Leaflet.js + 雙重降級
+現場為純 AP 環境、無對外網路，所有地圖資源必須預先打包進 ROV 系統，不能依賴外部 CDN 或線上圖磚服務。
 
-Leaflet.js 存於 ESP32 LittleFS（gzip 後約 45KB），地圖磁磚走手機行動數據。**不使用 Google Maps**：Google Maps JS API 需從 Google CDN 載入，手機連上 ESP32 AP 後 Android 多數裝置會停止使用行動數據，無法保證可靠載入。
+### Leaflet.js + 離線預打包圖磚
+
+現場為**純 AP、無對外網路**：手機連上地面站 ESP32 AP 後，Android 多數裝置會停用行動數據，線上圖磚（OSM/Google）一律載不到。因此**不走線上圖磚**，改將「四個目標水域」的底圖**預打包進 LittleFS** `data/www/tiles/{z}/{x}/{y}.png`，Leaflet 指向本地路徑離線顯示。（同理不使用 Google Maps：其 JS API 需從 Google CDN 載入，AP 環境下無法可靠載入。）
+
+- **四場域**：外雙溪下游（雙溪濕地公園→福林橋）、大湖公園、碧湖公園、基隆河美堤/迎風河濱。
+- **圖源**：CARTO Voyager（底圖＝OSM 資料、免金鑰 raster，允許小量離線快取）；**OSM 官方 `tile.openstreetmap.org` 禁止批次下載**（會回 200＋「Access blocked」圖，勿用）。備援可切 Esri 衛星（`fetch_tiles.py` 的 `SOURCE`）。
+- **產生工具** `tools/fetch_tiles.py`：bbox→tile 換算、循序下載、雷同度防呆（偵測封鎖頁）、Pillow 量化壓縮、`--optimize-only`。z15–17、166 張、壓縮後約 2.1MB（跨場域去重，相鄰磚共用）。
 
 ```javascript
-const tileLayer = L.tileLayer(
-    'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-    { maxZoom: 18 }
-);
-tileLayer.on('tileerror', () => switchToCanvasGrid());
+const tiles = L.tileLayer('/tiles/{z}/{x}/{y}.png',
+    { minZoom: 15, maxZoom: 19, maxNativeZoom: 17, errorTileUrl: '透明圖' });
 ```
+
+### 操作感：硬邊界 + 能滑＝看得到的圖磚
+
+- `maxBoundsViscosity: 1`（滑到邊界硬停、不回彈）、`zoomControl: false`（手機雙指縮放，移除 +/- 鈕）。
+- `maxBounds` **動態＝實際圖磚覆蓋**：把場域 bbox 外擴到 256px 磚界（≥bbox），並於 `zoomend` 依當下原生 zoom 重算，使每個縮放層級「能滑的範圍」正好等於「螢幕看得到的圖磚」，不露黑邊。
+
+### 即時艇位 marker（顯示「潛水艇」位置，非操作者）
+
+- marker 取自 **`TelemetryPacket.lat/lng`**（ROV 板載 GPS，經 ESP-NOW→GS→WS 下推），**不是**手機 Geolocation。ROV 一有有效 GPS fix（`lat/lng` 非 0,0、天空可見）即**自動畫上**並逐筆更新位置。
+- **航向箭頭**：優先用遙測 `heading`（QMC5883P 校正後航向）；判定羅盤是否上線＝原始磁場 `magX/magY` 非 (0,0)。羅盤未上線時**退回** GPS 連續兩點位移推算 course-over-ground（位移 **≥3m** 才更新方向）；尚未位移（剛開機/靜止且無羅盤）顯示**脈動圓點**，一移動轉成指向艇首的**箭頭**。
+- **羅盤校準（手機端）**：航點頁側欄「🧭 校準」開浮層，把艇放平水平轉一圈，網頁即時收 `magX/magY` 的 min/max（12 扇區涵蓋度確認轉滿），算出 `offsetX/Y`、`scaleX/Y` 並輸出可直接貼進 `sensors.cpp` 的常數；重燒 ROV 後航向才準（細節見 `doc/06 §五`）。
+
+<Callout type="warning">
+地圖**不自動切場域**：ROV 在哪個水域就要先點對應 chip，且該場域圖磚要涵蓋其座標才看得到。
+</Callout>
 
 ### LittleFS 檔案架構
 
 ```
 data/www/
-├── index.html           ~5 KB
-├── style.css.gz         ~3 KB
-├── app.js.gz            ~8 KB
-├── leaflet.js.gz        ~45 KB
-├── leaflet.css.gz       ~4 KB
-└── images/
-    ├── marker-icon.png  ~1 KB
-    └── marker-shadow.png ~1 KB
-─────────────────────────────────
-總計 ~70 KB（gzip），LittleFS 1.5MB 分區輕鬆容納
+├── index.html
+├── style.css / app.js
+├── leaflet.js / leaflet.css            （延遲載入，首次切到地圖分頁才抓）
+├── manifest.json / icon.svg / sw.js    （PWA：可加到主畫面、Service Worker 離線快取）
+└── tiles/{z}/{x}/{y}.png               四水域 z15–17，166 張 ~2.1MB
+──────────────────────────────────────
+LittleFS 由 2MB 擴為 4MB（放圖磚）；改分割表後下次須完整重燒。
 ```
 
 ---
 
 ## 七、地面站 setup() 初始化順序
+
+Wi-Fi 必須在 ESP-NOW 之前啟動，否則 ESP-NOW 無法取得頻道資訊。以下是正確的初始化順序與各步驟說明。
 
 ```cpp
 void setup() {
@@ -392,16 +470,16 @@ void setup() {
     LittleFS.begin();
     server.serveStatic("/", LittleFS, "/www/")
           .setDefaultFile("index.html")
-          .setCacheControl("max-age=600");
-    ws.onEvent(onWSEvent);
+          .setCacheControl("no-cache");   // 改版後手機不吃舊快取
+    ws.onEvent(onWSEvent);                // WS_EVT_DATA：收手機控制 → gamepadSetRemote
     server.addHandler(&ws);
     server.begin();
-    setupXbox();          // USB HID
+    setupGamepad();       // Bluepad32：保留 BTstack 入口；拒接手把藍牙（控制走手機 WS）
 }
 
 void loop() {
     ws.cleanupClients();
-    readXbox();           // 讀搖桿並發 ESP-NOW（100Hz）
+    readXboxAndSend();    // 從手機 WS 遙控狀態取值 → 差速混控 → ESP-NOW 送 ROV（~100Hz）
 }
 ```
 
@@ -409,16 +487,15 @@ void loop() {
 
 ## 八、常見踩坑清單
 
+本節彙整實測中出現過的問題、根本原因與解法，供除錯快速查閱。
+
 | 問題 | 原因 | 解法 |
 |------|------|------|
 | ESP-NOW 靜默失敗 | ifidx 或 peer MAC 填錯 | GS 填 ROV 的 STA MAC + `WIFI_IF_AP`；ROV 填 GS 的 AP MAC + `WIFI_IF_STA` |
 | 頻道不匹配導致失敗 | APSTA 模式 STA 頻道覆蓋 AP 頻道 | GS 改用純 AP 模式（已修正） |
 | 手機看不到影像 | ROV IP 被 DHCP 動態分配 | ROV 設定固定 IP 192.168.4.100 |
 | ESP-NOW 漏包 | Wi-Fi 省電模式 | 兩端均設 `esp_wifi_set_ps(WIFI_PS_NONE)` |
-| BLE + ESP-NOW 干擾 | 2.4GHz 無線電資源競爭 | 改用有線 USB HID Xbox |
+| 手把藍牙連地面站餓死 Wi-Fi AP | classic BT 連線佔無線電 → AP stations=0、ROV −127、影像連不上 | 手把改配對到「手機」；地面站 Bluepad32 拒絕並斷開手把連線、僅留 BTstack 入口 |
 | WebSocket 斷線後無法恢復 | 未實作自動重連 | 瀏覽器端實作指數退避重連 |
-| Google Maps 無法載入 | 手機連 ESP32 AP 後 Android 停用行動數據 | 改用 Leaflet.js + Canvas 降級 |
-
----
-
-*文件版本：v2.6　最後更新：2026-03-31*
+| 線上圖磚/Google Maps 載不到 | 手機連 ESP32 AP 後 Android 停用行動數據 | 改用 Leaflet.js + LittleFS 離線預打包圖磚（`/tiles`） |
+| 圖磚抓回全是同一張 | OSM 官方禁批次下載、回「Access blocked」圖 | 改用 CARTO Voyager；`fetch_tiles.py` 內建雷同度防呆 |
