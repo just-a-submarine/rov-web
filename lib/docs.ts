@@ -9,6 +9,7 @@ export interface DocMeta {
   title: string;
   description?: string;
   order: number;
+  category?: string;
 }
 
 export interface DocContent extends DocMeta {
@@ -35,8 +36,23 @@ export function getAllDocsMeta(): DocMeta[] {
       title: data.title ?? filename,
       description: data.description,
       order: data.order ?? idx,
+      category: data.category,
     };
   });
+}
+
+/** 取得指定文件在排序中的前一篇 / 後一篇，供頁尾導覽使用。 */
+export function getAdjacentDocs(slug: string): {
+  prev: DocMeta | null;
+  next: DocMeta | null;
+} {
+  const all = getAllDocsMeta();
+  const idx = all.findIndex((m) => m.slug === slug);
+  if (idx === -1) return { prev: null, next: null };
+  return {
+    prev: idx > 0 ? all[idx - 1] : null,
+    next: idx < all.length - 1 ? all[idx + 1] : null,
+  };
 }
 
 export function getDocContent(slug: string): DocContent | null {

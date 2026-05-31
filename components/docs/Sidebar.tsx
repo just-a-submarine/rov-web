@@ -10,28 +10,60 @@ interface SidebarProps {
   docs: DocMeta[];
 }
 
+interface DocGroup {
+  category: string;
+  docs: DocMeta[];
+}
+
+/** 依 frontmatter 的 category 分組，保留首次出現順序與組內順序。 */
+function groupDocs(docs: DocMeta[]): DocGroup[] {
+  const groups: DocGroup[] = [];
+  for (const doc of docs) {
+    const category = doc.category ?? "其他";
+    let group = groups.find((g) => g.category === category);
+    if (!group) {
+      group = { category, docs: [] };
+      groups.push(group);
+    }
+    group.docs.push(doc);
+  }
+  return groups;
+}
+
 export function Sidebar({ docs }: SidebarProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const groups = groupDocs(docs);
 
-  const navItems = docs.map((doc) => {
-    const href = `/docs/${doc.slug}`;
-    const active = pathname === href;
-    return (
-      <Link
-        key={doc.slug}
-        href={href}
-        onClick={() => setMobileOpen(false)}
-        className={`px-3 py-2 rounded-md text-sm transition-all duration-150 leading-snug
-          ${active
-            ? "bg-accent-cyan-dim text-accent-cyan font-medium"
-            : "text-muted hover:text-foreground hover:bg-surface-2"
-          }`}
-      >
-        {doc.title}
-      </Link>
-    );
-  });
+  const renderGroups = () =>
+    groups.map((group) => (
+      <div key={group.category} className="mb-4 last:mb-0">
+        <p className="px-3 mb-1.5 text-[0.7rem] font-semibold text-muted uppercase tracking-widest">
+          {group.category}
+        </p>
+        <div className="flex flex-col gap-0.5">
+          {group.docs.map((doc) => {
+            const href = `/docs/${doc.slug}`;
+            const active = pathname === href;
+            return (
+              <Link
+                key={doc.slug}
+                href={href}
+                onClick={() => setMobileOpen(false)}
+                className={`px-3 py-2 rounded-md text-sm transition-all duration-150 leading-snug
+                  ${
+                    active
+                      ? "bg-accent-cyan-dim text-accent-cyan font-medium"
+                      : "text-muted hover:text-foreground hover:bg-surface-2"
+                  }`}
+              >
+                {doc.title}
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+    ));
 
   return (
     <>
@@ -49,8 +81,8 @@ export function Sidebar({ docs }: SidebarProps) {
         </button>
 
         {mobileOpen && (
-          <nav className="mt-2 flex flex-col gap-0.5 rounded-lg border border-border bg-surface p-2">
-            {navItems}
+          <nav className="mt-2 rounded-lg border border-border bg-surface p-2">
+            {renderGroups()}
           </nav>
         )}
       </div>
@@ -61,9 +93,7 @@ export function Sidebar({ docs }: SidebarProps) {
           <p className="text-xs font-semibold text-muted uppercase tracking-widest mb-3 px-3">
             文件索引
           </p>
-          <nav className="flex flex-col gap-0.5">
-            {navItems}
-          </nav>
+          <nav>{renderGroups()}</nav>
         </div>
       </aside>
     </>

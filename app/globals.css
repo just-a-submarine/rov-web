@@ -77,6 +77,22 @@ body {
   line-height: 1.75;
   font-size: 0.9rem;
 }
+
+/* 標題錨點：捲動時讓出固定導覽列高度，hover 才顯示 # 連結 */
+html { scroll-behavior: smooth; }
+.mdx-content :is(h2, h3, h4) { scroll-margin-top: 6rem; }
+.mdx-content .heading-anchor {
+  margin-left: 0.4rem;
+  color: #22D3EE;
+  border-bottom: none;
+  text-decoration: none;
+  font-weight: 400;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.mdx-content :is(h2, h3, h4):hover .heading-anchor { opacity: 0.55; }
+.mdx-content .heading-anchor:hover { opacity: 1; }
+
 .mdx-content h1,
 .mdx-content h2,
 .mdx-content h3,
