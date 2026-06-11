@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>ROV 地面站</title>
+
+  <!-- 模擬器版：移除 PWA manifest / service worker（避免在 iframe 內以 scope '/' 劫持整個報告站台）。 -->
+  <meta name="theme-color" content="#05080f">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+
+  <!-- Leaflet 改延遲載入（只在開「航點」分頁時抓），不擋首屏 -->
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <!-- 頂列 HUD：連線指示 + 模式 + 全螢幕 -->
+  <header class="hud-top">
+    <div class="dots">
+      <span id="dot-ws"  class="dot" title="地面站連線">GS</span>
+      <span id="dot-gp"  class="dot" title="手把">PAD</span>
+      <span id="dot-cam" class="dot" title="影像串流">CAM</span>
+    </div>
+    <div id="nav-text" class="mode">手動模式</div>
+    <nav class="tabs" role="tablist">
+      <button class="tab active" data-tab="video" role="tab">📹 影像</button>
+      <button class="tab"        data-tab="map"   role="tab">🗺 航點</button>
+    </nav>
+    <button id="btn-snd" class="fs-btn" title="音效" aria-label="音效開關">🔊</button>
+    <button id="btn-fs" class="fs-btn" title="全螢幕" aria-label="全螢幕">⛶</button>
+  </header>
+
+  <!-- 轉向提示：手機直向時蓋全屏，提示轉橫（橫向自動隱藏；桌機/滑鼠不顯示）。
+       無法強制旋轉硬體 → iOS 只能提示；Android 全螢幕時 app.js 會試著鎖橫向。 -->
+  <div id="rotate-hint" class="rotate-hint" aria-hidden="true">
+    <div class="rotate-phone">📱</div>
+    <p class="rotate-title">請將手機轉為橫向</p>
+    <p class="rotate-sub">橫向才會顯示搖桿控制，操作體驗最佳</p>
+  </div>
+
+  <!-- 急停橫幅 -->
+  <div id="estop-banner" class="estop-banner">⛔ 緊急停止中　按手把 Start 解鎖</div>
+
+  <!-- 遙測 HUD（常駐狀態監控）-->
+  <section class="telemetry">
+    <div class="tcell"><span class="tlabel">電量</span><span id="t-bat"     class="tval">--</span><span class="tunit">%</span></div>
+    <div class="tcell"><span class="tlabel">功率</span><span id="t-power"   class="tval">--</span><span class="tunit">W</span></div>
+    <div class="tcell mtr"><span class="tlabel">左</span><span id="t-ml" class="tval small">--</span><span class="tunit">%</span></div>
+    <div class="tcell mtr"><span class="tlabel">右</span><span id="t-mr" class="tval small">--</span><span class="tunit">%</span></div>
+    <div class="tcell mtr"><span class="tlabel">垂</span><span id="t-mv" class="tval small">--</span><span class="tunit">%</span></div>
+    <div class="tcell"><span class="tlabel">訊號</span><span id="t-rssi"    class="tval">--</span><span class="tunit">dBm</span></div>
+    <div class="tcell"><span class="tlabel">深度</span><span id="t-depth"   class="tval">--</span><span class="tunit">m</span></div>
+    <div class="tcell"><span class="tlabel">航向</span><span id="t-heading" class="tval">--</span><span class="tunit">°</span></div>
+    <div class="tcell led"><span class="tlabel">燈</span><span id="t-led" class="tval small">--</span></div>
+    <div class="tcell"><span class="tlabel">串流</span><span id="stream-mode-badge" class="tval small">純串流</span></div>
+    <div id="rssi-warning" class="rssi-warn"></div>
+  </section>
+
+  <!-- 內容區 -->
+  <main class="content">
+    <!-- 影像頁 -->
+    <section id="pane-video" class="pane active">
+      <div class="video-wrap">
+        <!-- src 由 app.js initStream() 設定：MJPEG 串流是無限連線，放在 HTML 會卡住 window.load -->
+        <img id="stream" class="fit-contain" alt="">
+        <div id="stream-ph" class="stream-ph">📡 影像連線中…</div>
+        <span class="corner tl"></span><span class="corner tr"></span>
+        <span class="corner bl"></span><span class="corner br"></span>
+      </div>
+
+      <!-- 虛擬觸控控制（置於影像頁內 → 自動落在狀態列下方，任何螢幕都不重疊；橫向且未接手把才顯示）。
+           左＝相機+錄影（上）＋虛擬左搖桿（下）；右＝燈（上）＋深度垂直搖桿（下）。WS {t:'c',...}。 -->
+      <div id="touch-ctl" class="touch-ctl" hidden>
+        <div class="touch-left">
+          <div class="act-top" aria-label="相機 / 影像串流">
+            <button id="tb-photo" class="tbtn small" aria-label="拍照">📷</button>
+            <button id="tb-rec"   class="tbtn small" aria-label="錄影">⏺</button>
+          </div>
+          <div id="joy" class="joy" aria-label="虛擬左搖桿（前後左右）">
+            <div id="joy-thumb" class="joy-thumb"></div>
+          </div>
+        </div>
+        <div class="touch-right">
+          <button id="tb-light" class="tbtn small" aria-label="燈光">💡</button>
+          <div id="depth-joy" class="depth-joy" aria-label="深度搖桿（上升 / 下潛）">
+            <span class="depth-mark up">▲</span>
+            <div id="depth-thumb" class="depth-thumb"></div>
+            <span class="depth-mark down">▼</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 地圖 / 航點頁：左地圖 + 右窄側邊欄 -->
+    <section id="pane-map" class="pane">
+      <div id="map"></div>
+      <!-- 提示浮在地圖左上：預設隱藏，僅上傳結果/警告時短暫閃現後自動消失（無常駐提示） -->
+      <div id="wp-hint" class="wp-hint" hidden></div>
+      <!-- 右側邊欄：上＝四場域跳轉（直排）、下＝上傳/清除 -->
+      <aside class="map-side" aria-label="航點控制">
+        <div class="side-sites" role="group" aria-label="場域快速跳轉">
+          <button class="site-chip active" data-site="waishuangxi">外雙溪</button>
+          <button class="site-chip"        data-site="dahu">大湖</button>
+          <button class="site-chip"        data-site="bihu">碧湖</button>
+          <button class="site-chip"        data-site="keelung">基隆河</button>
+        </div>
+        <div class="side-actions">
+          <span id="wp-count" class="wp-count">航點 0</span>
+          <div class="side-act-row">
+            <button id="btn-upload" class="btn primary">上傳</button>
+            <button id="btn-clear" class="btn">清除</button>
+          </div>
+          <button id="btn-cal" class="btn cal-open" title="羅盤校準">🧭 校準</button>
+          <button id="btn-auto" class="btn" title="自動導航（需航點＋GPS 定位才會實際移動）">▶ 啟動自動</button>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <div id="shutter"></div>
+  <div id="photo-toast" class="toast">📷 已拍照存檔</div>
+
+  <!-- 羅盤校準浮層：把潛水艇放平水平轉一整圈，自動收 magX/Y 的 min/max →
+       算 hard-iron offset 與 soft-iron scale，輸出可直接貼進 sensors.cpp 的常數 -->
+  <div id="cal-overlay" class="cal-overlay" hidden>
+    <div class="cal-card">
+      <div class="cal-head">
+        <span>🧭 羅盤校準</span>
+        <button id="cal-close" class="cal-x" aria-label="關閉">✕</button>
+      </div>
+      <p class="cal-hint">潛水艇放平、水平緩慢轉一整圈（讓「涵蓋」集到 100%），再把下方常數貼進
+        <code>sensors.cpp</code> 重燒 ROV。</p>
+      <div class="cal-live">
+        <div><span>航向</span><b id="cal-heading">--</b>°</div>
+        <div><span>涵蓋</span><b id="cal-cover">0</b>%</div>
+        <div><span>磁場X</span><b id="cal-mx">--</b></div>
+        <div><span>磁場Y</span><b id="cal-my">--</b></div>
+      </div>
+      <div class="cal-actions">
+        <button id="cal-start" class="btn primary">開始收集</button>
+        <button id="cal-reset" class="btn">重置</button>
+      </div>
+      <pre id="cal-out" class="cal-out">尚未收集。按「開始收集」後把艇轉一圈。</pre>
+      <button id="cal-copy" class="btn" disabled>複製常數</button>
+    </div>
+  </div>
+
+  <!-- 模擬器三件組：必須在 app.js 之前載入（engine 先裝 WebSocket/fetch shim 與 __SIM 橋，
+       audio 合成音效、cam 畫世界與玩法），最後才讓真實儀表板 app.js 啟動。 -->
+  <script src="./sim-engine.js"></script>
+  <script src="./sim-audio.js"></script>
+  <script src="./sim-cam.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>

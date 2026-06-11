@@ -7,6 +7,7 @@ import {
   Trophy,
   BookOpen,
   Github,
+  Gamepad2,
 } from "lucide-react";
 
 interface NavCard {
@@ -15,6 +16,7 @@ interface NavCard {
   label: string;
   accent: string;
   dimBg: string;
+  wide?: boolean;
 }
 
 const cards: NavCard[] = [
@@ -46,6 +48,14 @@ const cards: NavCard[] = [
     accent: "#F9A8D4",
     dimBg: "rgba(249,168,212,0.08)",
   },
+  {
+    href: "/simulator",
+    icon: <Gamepad2 size={32} />,
+    label: "潛水艇模擬器",
+    accent: "#FBBF24",
+    dimBg: "rgba(251,191,36,0.08)",
+    wide: true,
+  },
 ];
 
 const container: Variants = {
@@ -75,7 +85,7 @@ export function NavGrid() {
             className="relative group cursor-pointer"
           >
             <div
-              className="glass rounded-2xl p-7 flex flex-col items-center gap-4 text-center
+              className="glass rounded-2xl p-5 sm:p-6 flex flex-col items-center gap-3 text-center
                          transition-all duration-300 group-hover:border-opacity-30"
               style={{
                 borderColor: "transparent",
@@ -92,14 +102,14 @@ export function NavGrid() {
             >
               {/* Icon */}
               <div
-                className="w-16 h-16 rounded-2xl flex items-center justify-center transition-colors duration-200"
+                className="w-14 h-14 rounded-2xl flex items-center justify-center transition-colors duration-200"
                 style={{ background: card.dimBg, color: card.accent }}
               >
                 {card.icon}
               </div>
 
               {/* Label */}
-              <p className="text-lg font-bold text-foreground">{card.label}</p>
+              <p className="text-base sm:text-lg font-bold text-foreground">{card.label}</p>
 
               {/* Arrow */}
               <span
@@ -113,7 +123,7 @@ export function NavGrid() {
         );
 
         return (
-          <Link key={card.href} href={card.href}>
+          <Link key={card.href} href={card.href} className={card.wide ? "col-span-2" : ""}>
             {inner}
           </Link>
         );

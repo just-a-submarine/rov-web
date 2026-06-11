@@ -104,7 +104,7 @@ ${docContext ?? "（無文件內容）"}
           "X-Title": "Just a Submarine ROV",
         },
         body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
+          model: "google/gemini-3.5-flash",
           messages: openRouterMessages,
           stream: true,
         }),

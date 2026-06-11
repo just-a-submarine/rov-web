@@ -61,6 +61,22 @@ export function AIChatWidget({ docTitle, docSlug, docContent }: AIChatWidgetProp
     return () => clearTimeout(t);
   }, []);
 
+  // 從期末報告核心頁帶 ?assistant=1 進來 → 自動彈開 AI 助手，並把參數清掉
+  // （避免之後重整/在文件間瀏覽又一直自動開）。只在掛載時判斷一次。
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("assistant") === "1") {
+      setIsOpen(true);
+      setShowHint(false);
+      window.history.replaceState(
+        null,
+        "",
+        window.location.pathname + window.location.hash
+      );
+    }
+  }, []);
+
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 639px)");
     setIsMobile(mq.matches);

@@ -12,11 +12,15 @@ interface Ripple {
   x: number;
   y: number;
   t: number;
+  gold: boolean; // 點到可互動元素（游標鎖定金）才畫金漣漪，否則青色
 }
 
+// 與 CustomCursor 一致的「可點擊」判定：點到這些才會變金鎖定色
+const INTERACTIVE = 'a, button, [role="button"], label, select, summary, .cursor-pointer';
+
 const TRAIL_DURATION = 500; // ms — trail fades over this period
-const RIPPLE_DURATION = 500; // ms
-const RIPPLE_MAX_RADIUS = 28;
+const RIPPLE_DURATION = 650; // ms
+const RIPPLE_MAX_RADIUS = 42; // 點擊/點按聲納漣漪外圈最大半徑
 const TRAIL_SPACING = 10; // px — minimum distance before adding a new point
 const TRAIL_RADIUS = 3; // px — dot size
 const TRAIL_MAX_ALPHA = 0.35; // subtle
@@ -55,9 +59,17 @@ export function CursorTrail() {
     };
 
     // ── Mouse handlers ────────────────────────────────────────────────
+    const isInteractive = (target: EventTarget | null) =>
+      !!(target as Element | null)?.closest?.(INTERACTIVE);
+
     const onMouseMove = (e: MouseEvent) => addTrailPoint(e.clientX, e.clientY);
     const onClick = (e: MouseEvent) =>
-      ripplesRef.current.push({ x: e.clientX, y: e.clientY, t: performance.now() });
+      ripplesRef.current.push({
+        x: e.clientX,
+        y: e.clientY,
+        t: performance.now(),
+        gold: isInteractive(e.target),
+      });
 
     // ── Touch handlers ────────────────────────────────────────────────
     const onTouchMove = (e: TouchEvent) => {
@@ -66,7 +78,13 @@ export function CursorTrail() {
     };
     const onTouchStart = (e: TouchEvent) => {
       const t = e.touches[0];
-      if (t) ripplesRef.current.push({ x: t.clientX, y: t.clientY, t: performance.now() });
+      if (t)
+        ripplesRef.current.push({
+          x: t.clientX,
+          y: t.clientY,
+          t: performance.now(),
+          gold: isInteractive(e.target),
+        });
     };
 
     window.addEventListener("mousemove", onMouseMove);
@@ -102,17 +120,26 @@ export function CursorTrail() {
         (r) => now - r.t < RIPPLE_DURATION
       );
 
-      // Draw ripples
+      // Draw ripples — 聲納雙環脈衝（外環＋內環）。整組同色：
+      // 點到可點擊處（游標鎖定金）→ 琥珀金；一般點擊（青色游標）→ 青色。
       ripplesRef.current.forEach((rip) => {
         const age = now - rip.t;
         const progress = age / RIPPLE_DURATION; // 0 → 1
-        const radius = RIPPLE_MAX_RADIUS * progress;
-        const alpha = 0.5 * (1 - progress);
+        const fade = 1 - progress;
+        const rgb = rip.gold ? "251, 191, 36" : "34, 211, 238";
 
+        // 外環
         ctx.beginPath();
-        ctx.arc(rip.x, rip.y, radius, 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(34, 211, 238, ${alpha})`;
+        ctx.arc(rip.x, rip.y, RIPPLE_MAX_RADIUS * progress, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(${rgb}, ${0.5 * fade})`;
         ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // 內環，稍慢擴張＝脈衝感
+        ctx.beginPath();
+        ctx.arc(rip.x, rip.y, RIPPLE_MAX_RADIUS * progress * 0.6, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(${rgb}, ${0.55 * fade})`;
+        ctx.lineWidth = 2;
         ctx.stroke();
       });
 

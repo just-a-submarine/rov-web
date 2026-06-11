@@ -8,10 +8,11 @@ import { Logo } from "@/components/brand/Logo";
 import { site } from "@/lib/site";
 
 const navLinks = [
-  { href: "/midterm", label: "期中報告" },
-  { href: "/final",   label: "期末報告" },
-  { href: "/docs",    label: "文件"     },
-  { href: "/repos",   label: "倉庫"     },
+  { href: "/midterm",   label: "期中報告" },
+  { href: "/final",     label: "期末報告" },
+  { href: "/simulator", label: "模擬器"   },
+  { href: "/docs",      label: "文件"     },
+  { href: "/repos",     label: "倉庫"     },
 ];
 
 export function TopNav() {
@@ -70,7 +71,7 @@ export function TopNav() {
 
       {/* Mobile menu */}
       {open && (
-        <div className="md:hidden border-t border-border bg-surface">
+        <div className="md:hidden border-t border-border bg-surface max-h-[calc(100dvh-56px)] overflow-y-auto">
           <nav className="max-w-6xl mx-auto px-4 py-3 flex flex-col gap-1">
             {navLinks.map(({ href, label }) => {
               const active = pathname === href || pathname.startsWith(href + "/");

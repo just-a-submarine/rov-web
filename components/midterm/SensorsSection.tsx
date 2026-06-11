@@ -22,7 +22,7 @@ export function SensorsSection() {
         <h2 className="text-3xl sm:text-4xl font-bold text-foreground">感測器</h2>
       </div>
 
-      <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 w-full max-w-3xl">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 w-full max-w-3xl">
         {sensors.map((s, i) => (
           <motion.div
             key={s.name}

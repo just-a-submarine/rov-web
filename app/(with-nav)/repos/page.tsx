@@ -77,8 +77,8 @@ export default function ReposPage() {
               href={repo.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="relative glass rounded-2xl p-5 flex flex-col gap-3 transition-all duration-200
-                         hover:border-accent-cyan/40 hover:shadow-[0_0_16px_rgba(34,211,238,0.12)] cursor-pointer"
+              className="repo-card relative glass rounded-2xl p-5 flex flex-col gap-3 transition-all duration-200
+                         hover:border-accent-cyan/40 hover:shadow-[0_0_18px_rgba(34,211,238,0.18)] cursor-pointer"
             >
               {cardContent}
             </a>

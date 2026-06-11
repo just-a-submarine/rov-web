@@ -5,6 +5,9 @@ import { motion } from "framer-motion";
 import { Logo } from "@/components/brand/Logo";
 import { NavGrid } from "@/components/home/NavGrid";
 import { QRCorner } from "@/components/nav/QRCorner";
+import { QRScanHint } from "@/components/nav/QRScanHint";
+import { CursorTrail } from "@/components/effects/CursorTrail";
+import { CustomCursor } from "@/components/effects/CustomCursor";
 
 const BubbleField = dynamic(
   () => import("@/components/home/BubbleField").then((m) => m.BubbleField),
@@ -27,7 +30,7 @@ export default function HomePage() {
       />
 
       {/* Content */}
-      <div className="flex flex-col items-center gap-10 w-full py-16 px-4">
+      <div className="flex flex-col items-center gap-8 w-full py-10 px-4">
         {/* Logo + Title */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -63,6 +66,13 @@ export default function HomePage() {
         <QRCorner />
         <span className="text-xs text-muted/40 font-mono hidden sm:block">此頁 QR</span>
       </div>
+
+      {/* 指向 QR 的掃描提示（常駐） */}
+      <QRScanHint />
+
+      {/* 滑鼠 / 觸控軌跡特效 + 自製品牌游標 */}
+      <CursorTrail />
+      <CustomCursor />
     </div>
   );
 }

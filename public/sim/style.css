@@ -1,0 +1,517 @@
+:root {
+  --bg:     #05080f;
+  --bg2:    #0a1322;
+  --panel:  #0b1626;
+  --panel2: #0e1c30;
+  --line:   rgba(34, 211, 238, .22);
+  --line2:  rgba(34, 211, 238, .10);
+  --text:   #dbeafe;
+  --muted:  #7c93b3;
+  --cyan:   #22d3ee;
+  --green:  #34d399;
+  --amber:  #fbbf24;
+  --red:    #f43f5e;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Segoe UI", "Noto Sans TC", Roboto, system-ui, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  /* 模擬器版：嵌在 iframe 裡，用 100%（=iframe 高）取代 100dvh，避免與 iframe 高度差幾 px → 出現上下捲軸 */
+  height: 100%;
+  overflow: hidden;
+  /* 科技感：極淡青色網格底 */
+  background-color: var(--bg);
+  background-image:
+    linear-gradient(var(--line2) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line2) 1px, transparent 1px);
+  background-size: 28px 28px;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+           env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+.mono, .tval { font-family: "Roboto Mono", "DejaVu Sans Mono", ui-monospace, monospace; }
+
+/* ---------- 頂列 HUD ---------- */
+.hud-top {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  background: linear-gradient(180deg, var(--panel2), var(--panel));
+  border-bottom: 1px solid var(--line);
+}
+.dots { display: flex; gap: 5px; }
+.dot {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .5px;
+  padding: 3px 6px;
+  border-radius: 5px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  background: rgba(0,0,0,.25);
+  font-family: "Roboto Mono", ui-monospace, monospace;
+  transition: all .2s;
+}
+.dot.on  { color: #04121a; background: var(--cyan); border-color: var(--cyan);
+           box-shadow: 0 0 8px rgba(34,211,238,.6); }
+.dot.warn{ color: #1a1300; background: var(--amber); border-color: var(--amber); }
+.mode {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--cyan);
+  text-shadow: 0 0 10px rgba(34,211,238,.4);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.fs-btn {
+  flex: 0 0 auto;
+  width: 30px; height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: rgba(34,211,238,.08);
+  color: var(--cyan);
+  font-size: 15px; line-height: 1;
+  cursor: pointer;
+}
+.fs-btn:active { transform: scale(.94); }
+
+/* ---------- 急停橫幅 ---------- */
+.estop-banner {
+  display: none;
+  flex: 0 0 auto;
+  padding: 8px 12px;
+  text-align: center;
+  font-size: 14px; font-weight: 800; letter-spacing: 1px;
+  color: #fff;
+  background: var(--red);
+  box-shadow: 0 0 16px rgba(244,63,94,.6) inset;
+  animation: blink 1s steps(2, start) infinite;
+}
+@keyframes blink { 50% { opacity: .5; } }
+
+/* ---------- 遙測 HUD ---------- */
+.telemetry {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1px;
+  background: var(--line2);
+  border-bottom: 1px solid var(--line);
+}
+.tcell {
+  flex: 1 1 auto;
+  min-width: 29%;            /* 窄屏約 3 格一列；flex-grow 補滿整列 */
+  background: var(--panel);
+  padding: 6px 10px;
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  overflow: hidden;
+}
+.tcell.wide { min-width: 60%; }   /* 座標較長：佔大半列，與「燈」同列 */
+.tlabel {
+  color: var(--muted);
+  font-size: 10px; font-weight: 600; letter-spacing: 1px;
+  flex: 0 0 auto;
+}
+.tval {
+  font-size: 17px; font-weight: 700;
+  color: var(--cyan);
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 8px rgba(34,211,238,.35);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.tval.small { font-size: 13px; font-weight: 600; }
+.tunit { color: var(--muted); font-size: 10px; flex: 0 0 auto; }
+.rssi-warn {
+  flex: 1 1 100%;            /* 自成一列 */
+  background: var(--panel);
+  padding: 0 10px;
+  font-size: 12px; font-weight: 700;
+  min-height: 0;
+}
+.rssi-warn:not(:empty) { padding: 6px 10px; }
+
+/* ---------- 分頁 ---------- */
+/* 分頁＝頂列 HUD 內的分段控制（在「手動模式」右側，不再獨佔一列）*/
+.tabs {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 4px;
+}
+.tab {
+  flex: 0 0 auto;
+  padding: 6px 12px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: rgba(0,0,0,.22);
+  color: var(--muted);
+  font-size: 13px; font-weight: 700; letter-spacing: 1px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.tab.active {
+  color: var(--cyan);
+  border-color: var(--line);
+  background: rgba(34,211,238,.12);
+  text-shadow: 0 0 8px rgba(34,211,238,.4);
+}
+
+/* ---------- 內容 / 分頁面板 ---------- */
+.content { flex: 1 1 auto; position: relative; min-height: 0; display: flex; }
+.pane { display: none; flex: 1 1 auto; min-height: 0; }
+.pane.active { display: flex; flex-direction: column; }
+/* 影像頁設 relative：虛擬觸控控制改放它裡面（絕對定位 inset:0）→ 永遠落在狀態列下方，任何螢幕都不重疊 */
+#pane-video { position: relative; }
+
+/* ---------- 影像 ---------- */
+.video-wrap {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.video-wrap img { width: 100%; height: 100%; object-fit: contain; display: block; transition: opacity .2s; }
+.stream-ph {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--muted); font-size: 15px; font-weight: 600; letter-spacing: 1px;
+  background:
+    repeating-linear-gradient(45deg, #060b14, #060b14 14px, #0a111d 14px, #0a111d 28px);
+}
+/* 串流狀態（純串流/錄影中）已移到狀態列遙測格 #stream-mode-badge（`.tval`），不再浮在影像上。 */
+/* 影像一律用原始比例（object-fit: contain，不拉伸）→ 橫向時兩側自然留黑邊放控制 */
+.video-wrap img.fit-contain { object-fit: contain; }
+
+/* HUD 角框 */
+.corner { position: absolute; width: 18px; height: 18px; border: 2px solid var(--cyan); opacity: .55; pointer-events: none; }
+.corner.tl { top: 6px; left: 6px; border-right: 0; border-bottom: 0; }
+.corner.tr { top: 6px; right: 6px; border-left: 0; border-bottom: 0; }
+.corner.bl { bottom: 6px; left: 6px; border-right: 0; border-top: 0; }
+.corner.br { bottom: 6px; right: 6px; border-left: 0; border-top: 0; }
+.toast {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  padding: 10px 18px; border-radius: 8px;
+  background: rgba(0,0,0,.8); color: var(--cyan);
+  border: 1px solid var(--line);
+  font-size: 15px; opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 50;
+}
+
+/* 即時快門閃光：拍照按下當下本地閃一下（不等 ROV ack）→「一按就拍」的利索回饋。 */
+#shutter {
+  position: fixed; inset: 0; background: #fff; opacity: 0;
+  pointer-events: none; z-index: 9999;
+}
+#shutter.flash { animation: shutterFlash 180ms ease-out; }
+@keyframes shutterFlash { 0% { opacity: .55; } 100% { opacity: 0; } }
+
+/* ---------- 虛擬觸控控制（橫向、無實體手把時；置於影像頁內 → inset:0 只蓋影像區、不蓋 HUD）---------- */
+.touch-ctl { position: absolute; inset: 0; z-index: 40; pointer-events: none; }
+.touch-ctl[hidden] { display: none; }
+.touch-ctl > * { pointer-events: auto; }
+/* 直向無左右留白 → 一律隱藏（避免蓋住影像）；橫向才用左右剩餘空間擺搖桿 */
+@media (orientation: portrait) { .touch-ctl { display: none !important; } }
+
+/* ---------- 轉向提示（手機直向時蓋全屏，提示轉橫）---------- */
+.rotate-hint {
+  display: none;
+  position: fixed; inset: 0; z-index: 1200;
+  flex-direction: column; align-items: center; justify-content: center;
+  gap: 14px; padding: 24px; text-align: center;
+  background: rgba(5, 8, 15, 0.94);
+  -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+}
+.rotate-phone {
+  font-size: 64px; line-height: 1;
+  animation: rotateNudge 2.2s ease-in-out infinite;
+  filter: drop-shadow(0 0 12px rgba(34, 211, 238, 0.5));
+}
+.rotate-title { margin: 0; font-size: 18px; font-weight: 800; color: var(--cyan); letter-spacing: 1px; }
+.rotate-sub { margin: 0; font-size: 13px; color: var(--muted); line-height: 1.6; max-width: 18em; }
+@keyframes rotateNudge {
+  0%, 55%   { transform: rotate(0deg); }
+  75%, 100% { transform: rotate(-90deg); }
+}
+/* 只在「觸控裝置 + 直向」顯示；橫向或桌機（細指標）不擋畫面 */
+@media (pointer: coarse) and (orientation: portrait) {
+  .rotate-hint { display: flex; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rotate-phone { animation: none; }
+}
+
+/* 左黑邊：相機+錄影貼上緣（往上）、虛擬左搖桿貼下緣 → space-between 把兩者拉開 */
+.touch-left {
+  position: absolute; left: 18px; top: 12px; bottom: 14px;
+  display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+}
+.joy {
+  position: relative;
+  width: 146px; height: 146px; border-radius: 50%;   /* 較原 132 大 ~10% */
+  background: radial-gradient(circle, rgba(34,211,238,.12), rgba(5,8,15,.5));
+  border: 2px solid rgba(34,211,238,.45);
+  box-shadow: 0 0 16px rgba(34,211,238,.18);
+  touch-action: none; -webkit-user-select: none; user-select: none;
+}
+.joy-thumb {
+  position: absolute; left: 50%; top: 50%;
+  width: 64px; height: 64px; margin: -32px 0 0 -32px; border-radius: 50%;
+  background: rgba(34,211,238,.85); border: 2px solid #04121a;
+  box-shadow: 0 0 12px rgba(34,211,238,.6);
+  transition: transform .04s linear;
+}
+
+/* 右黑邊：燈貼上緣（往上）＋ 深度垂直搖桿貼下緣（略往左）→ space-between 拉開 */
+.touch-right {
+  position: absolute; right: 30px; top: 12px; bottom: 12px;
+  display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+}
+.act-top { display: flex; flex-direction: row; gap: 12px; }   /* 相機 + 影像串流 並排 */
+
+/* 深度垂直搖桿：上下挪動 → ry（比例＝升降轉速/強度），放開彈回中心歸零 */
+.depth-joy {
+  position: relative; width: 62px; height: 150px; border-radius: 31px;
+  background: radial-gradient(circle, rgba(34,211,238,.10), rgba(5,8,15,.5));
+  border: 2px solid rgba(34,211,238,.45);
+  box-shadow: 0 0 14px rgba(34,211,238,.16);
+  touch-action: none; -webkit-user-select: none; user-select: none;
+}
+.depth-thumb {
+  position: absolute; left: 50%; top: 50%;
+  width: 50px; height: 50px; margin: -25px 0 0 -25px; border-radius: 50%;
+  background: rgba(34,211,238,.85); border: 2px solid #04121a;
+  box-shadow: 0 0 12px rgba(34,211,238,.6);
+  transition: transform .04s linear;
+}
+.depth-mark {
+  position: absolute; left: 0; right: 0; text-align: center;
+  color: rgba(34,211,238,.55); font-size: 13px; font-weight: 800; pointer-events: none;
+}
+.depth-mark.up   { top: 6px; }
+.depth-mark.down { bottom: 6px; }
+
+.tbtn {
+  width: 64px; height: 64px; border-radius: 50%;
+  border: 2px solid rgba(34,211,238,.45);
+  background: rgba(5,8,15,.55); color: var(--cyan);
+  font-size: 23px; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; touch-action: none; -webkit-user-select: none; user-select: none;
+  -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+  /* 按下→開啟態(黃) 平順過渡；不再閃青色背景（只縮放回饋），視覺更順 */
+  transition: background .15s ease, border-color .15s ease, color .15s ease, transform .08s ease;
+}
+.tbtn.small { width: 52px; height: 52px; font-size: 19px; }   /* 燈/拍照/錄影 縮小 */
+.tbtn.active { transform: scale(.9); }                         /* 按壓只縮放，無青色閃爍 */
+.tbtn.on { background: var(--amber); border-color: var(--amber); color: #1a1304; }   /* 燈/錄影開啟態 */
+
+/* ---------- 地圖 / 航點 ---------- */
+/* 航點頁＝左地圖 + 右窄側邊欄（覆寫 .pane.active 的 column）；relative 供 wp-hint 浮層定位 */
+#pane-map.active { flex-direction: row; }
+#pane-map { position: relative; }
+#map {
+  flex: 1 1 auto; min-width: 0; min-height: 0;
+  background-color: #0a111d;
+  /* 鎖定範圍外/圖磚間隙留白處顯示淡網格（leaflet 容器設透明才看得到），像刻意的離線格線、非黑屏 */
+  background-image:
+    linear-gradient(var(--line2) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line2) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* 右側邊欄（窄）：上＝四場域直排、下＝上傳/清除 */
+.map-side {
+  flex: 0 0 96px;
+  display: flex; flex-direction: column;
+  gap: 8px;
+  padding: 8px 7px;
+  background: var(--panel);
+  border-left: 1px solid var(--line);
+  overflow-y: auto;
+}
+.side-sites { display: flex; flex-direction: column; gap: 6px; }
+.site-chip {
+  width: 100%;
+  padding: 9px 4px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: rgba(0,0,0,.22);
+  color: var(--muted);
+  font-size: 14px; font-weight: 700;
+  cursor: pointer;
+}
+.site-chip.active { color: var(--cyan); background: rgba(34,211,238,.12); border-color: var(--cyan); }
+.site-chip:active { transform: scale(.97); }
+.side-actions { margin-top: auto; display: flex; flex-direction: column; gap: 6px; }
+.side-act-row { display: flex; gap: 6px; }
+.side-act-row .btn { flex: 1 1 0; padding: 9px 4px; font-size: 13px; }
+.btn {
+  padding: 9px 14px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel2);
+  color: var(--text);
+  font-size: 14px; font-weight: 700;
+  cursor: pointer;
+}
+.btn.primary { background: rgba(34,211,238,.15); border-color: var(--cyan); color: var(--cyan); }
+.btn:active { transform: scale(.97); }
+.wp-count {
+  text-align: center;
+  font-size: 12px; font-weight: 700; color: var(--cyan);
+  font-family: "Roboto Mono", monospace;
+}
+/* 提示：浮在地圖左上（避開右側邊欄），半透明藥丸 */
+.wp-hint {
+  position: absolute; top: 8px; left: 8px; z-index: 800;
+  max-width: calc(100% - 112px);
+  padding: 5px 9px; border-radius: 6px;
+  background: rgba(5,8,15,.72); border: 1px solid var(--line2);
+  color: var(--muted); font-size: 11px; font-weight: 600;
+  -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+  pointer-events: none;
+}
+.wp-hint[hidden] { display: none; }   /* 預設/閒置時完全不顯示，不留空殼 */
+
+/* ROV 即時位置標記：有航向→方向箭頭（指艇首）＋ 漣漪脈動，無航向→圓點 */
+.rov-wrap { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; position: relative; }
+/* 持續擴散的漣漪環（置中、隨自身尺寸長大仍維持中心） */
+.rov-ping {
+  position: absolute; left: 50%; top: 50%;
+  width: 14px; height: 14px; border-radius: 50%;
+  transform: translate(-50%, -50%);
+  border: 2px solid var(--red);
+  animation: rovPing 1.6s ease-out infinite;
+  pointer-events: none;
+}
+@keyframes rovPing {
+  0%   { width: 12px; height: 12px; opacity: .85; }
+  100% { width: 46px; height: 46px; opacity: 0; }
+}
+/* 方向箭頭（SVG）：明確指向艇首，旋轉跟著航向 */
+.rov-arrow {
+  width: 26px; height: 26px;
+  fill: var(--red);
+  filter: drop-shadow(0 0 5px rgba(244,63,94,.95));
+  transition: transform .2s ease-out;
+}
+.rov-dot {
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--red); box-shadow: 0 0 8px rgba(244,63,94,.85);
+}
+
+.wp-marker {
+  background: var(--cyan); color: #04121a;
+  border: 2px solid #fff; border-radius: 50%;
+  width: 24px; height: 24px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 800;
+  box-shadow: 0 0 8px rgba(34,211,238,.6);
+}
+
+/* Leaflet 深色微調：容器透明 → 圖磚間隙/鎖定邊緣顯示 #map 的離線網格（而非黑屏） */
+.leaflet-container { background: transparent; }
+.leaflet-control-zoom a {
+  background: var(--panel2) !important; color: var(--cyan) !important;
+  border-color: var(--line) !important;
+}
+.leaflet-bar { box-shadow: 0 0 10px rgba(0,0,0,.6); }
+
+/* 模擬器假水下影像 canvas：限制在中央影像框（對齊角框與真實 #stream），橫向時兩側留黑邊放控制。
+   canvas 是 replaced element → 必須用 width/height（百分比）拉伸，不能靠 left/right 偏移（不會撐開）。 */
+#sim-cam { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; display: block; }
+
+/* ===== 橫向（所有尺寸，含電腦版）：影像縮中央、兩側黑邊放控制 =====
+   不再限 max-height:600 → 桌機/平板也保證有足夠黑邊容下控制（避免控制蓋到影像）。 */
+@media (orientation: landscape) {
+  :root { --gutter: 168px; }
+  .video-wrap { padding-left: var(--gutter); padding-right: var(--gutter); }
+  /* 角框、佔位條紋內縮到中央影像框，不畫進黑邊/不蓋控制 */
+  .video-wrap .corner.tl, .video-wrap .corner.bl { left:  calc(var(--gutter) + 6px); }
+  .video-wrap .corner.tr, .video-wrap .corner.br { right: calc(var(--gutter) + 6px); }
+  .stream-ph { left: var(--gutter); right: var(--gutter); }
+  /* 假影像也內縮到中央框（replaced element 用 width，不用 right 偏移）→ 兩側黑邊放控制 */
+  #sim-cam   { left: var(--gutter); width: calc(100% - 2 * var(--gutter)); }
+}
+
+/* ===== 橫向「矮」螢幕（手機）：壓扁 HUD、遙測單列；分頁在頂列「手動模式」右側 ===== */
+@media (orientation: landscape) and (max-height: 600px) {
+  /* HUD 維持正常排版（不浮層、不蓋影像），只壓低高度 */
+  .hud-top { flex-wrap: nowrap; padding: 4px 8px; gap: 6px; }
+  .mode { font-size: 12px; letter-spacing: 1px; }
+  .fs-btn { width: 26px; height: 26px; font-size: 13px; }
+  .tab { padding: 5px 14px; font-size: 12px; }
+
+  /* 遙測壓成單列（不換行）：等寬、馬達/燈格收窄，10 格也塞得下 */
+  .telemetry { flex-wrap: nowrap; }
+  .telemetry .tcell { min-width: 0; flex: 1 1 0; padding: 3px 5px; }
+  .telemetry .tcell.led  { flex: 0.5 1 0; }        /* 燈只顯示 開/關，收窄 */
+  .telemetry .tcell.mtr  { flex: 0.72 1 0; }       /* 馬達轉速格收窄 */
+  .tval { font-size: 13px; }
+  .tval.small { font-size: 11px; }
+  .tlabel { letter-spacing: 0; }
+  .rssi-warn { display: none; }                    /* 省一列：靠訊號數值與顏色判讀 */
+}
+
+/* ===== 羅盤校準浮層（🧭 校準）===== */
+.cal-open { width: 100%; }
+.cal-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px; background: rgba(2,5,11,.72);
+  -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+}
+.cal-overlay[hidden] { display: none; }
+.cal-card {
+  width: min(420px, 100%); max-height: 90vh; overflow: auto;
+  background: var(--panel); border: 1px solid var(--cyan); border-radius: 12px;
+  box-shadow: 0 0 24px rgba(34,211,238,.25);
+  padding: 14px; display: flex; flex-direction: column; gap: 10px;
+}
+.cal-head { display: flex; align-items: center; justify-content: space-between;
+  font-size: 15px; font-weight: 800; color: var(--cyan); letter-spacing: 1px; }
+.cal-x { width: 30px; height: 30px; border: 1px solid var(--line); border-radius: 6px;
+  background: rgba(0,0,0,.25); color: var(--muted); font-size: 15px; cursor: pointer; }
+.cal-hint { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.cal-hint code { color: var(--cyan); font-family: "Roboto Mono", ui-monospace, monospace; }
+.cal-live { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.cal-live > div {
+  display: flex; align-items: baseline; gap: 6px;
+  padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg2);
+}
+.cal-live span { color: var(--muted); font-size: 11px; font-weight: 600; letter-spacing: 1px; }
+.cal-live b {
+  margin-left: auto; color: var(--green); font-size: 18px; font-weight: 800;
+  font-family: "Roboto Mono", ui-monospace, monospace;
+  text-shadow: 0 0 6px rgba(52,211,153,.5);
+}
+.cal-actions { display: flex; gap: 8px; }
+.cal-actions .btn { flex: 1 1 0; }
+.cal-out {
+  margin: 0; padding: 10px; border-radius: 8px;
+  background: #050a12; border: 1px solid var(--line);
+  color: var(--text); font-size: 12px; line-height: 1.5;
+  font-family: "Roboto Mono", ui-monospace, monospace;
+  white-space: pre-wrap; word-break: break-all; user-select: all;
+}
+.cal-card .btn:disabled { opacity: .45; cursor: not-allowed; }

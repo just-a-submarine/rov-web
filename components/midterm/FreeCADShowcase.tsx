@@ -24,7 +24,7 @@ export function FreeCADShowcase() {
       </div>
 
       {/* 3D 列印過程照片 */}
-      <div className="grid grid-cols-2 gap-4 w-full max-w-2xl">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-2xl">
         {[
           { src: "/images/3D列印01.jpg", alt: "3D 列印過程（一）" },
           { src: "/images/3D列印02.jpg", alt: "3D 列印過程（二）" },

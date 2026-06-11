@@ -1,6 +1,7 @@
 import { TopNav } from "@/components/nav/TopNav";
 import { QRCorner } from "@/components/nav/QRCorner";
 import { CursorTrail } from "@/components/effects/CursorTrail";
+import { CustomCursor } from "@/components/effects/CustomCursor";
 
 export default function WithNavLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -14,8 +15,9 @@ export default function WithNavLayout({ children }: { children: React.ReactNode 
         <span className="text-xs text-muted/40 font-mono hidden sm:block">此頁 QR</span>
       </div>
 
-      {/* 滑鼠 / 觸控軌跡特效 */}
+      {/* 滑鼠 / 觸控軌跡特效 + 自製品牌游標 */}
       <CursorTrail />
+      <CustomCursor />
     </>
   );
 }

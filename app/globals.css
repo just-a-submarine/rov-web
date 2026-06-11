@@ -6,7 +6,7 @@
   --surface:    #0F1420;
   --surface-2:  #141B2D;
   --foreground: #E5E7EB;
-  --muted:      #94A3B8;
+  --muted:      #D0D8E4;
   --border:     rgba(255,255,255,0.08);
   --accent-cyan:   #22D3EE;
   --accent-violet: #A78BFA;
@@ -162,11 +162,15 @@ html { scroll-behavior: smooth; }
 .mdx-content tr:hover td { background: rgba(255,255,255,0.02); }
 .mdx-content blockquote {
   border-left: 3px solid #22D3EE;
-  padding-left: 1rem;
-  margin: 1rem 0;
-  color: #6B7280;
-  font-style: italic;
+  border-radius: 0 8px 8px 0;
+  padding: 0.75rem 1rem;
+  margin: 1.25rem 0;
+  background: rgba(34, 211, 238, 0.06);
+  color: #CBD5E1;
 }
+.mdx-content blockquote p { margin-bottom: 0.5rem; }
+.mdx-content blockquote p:last-child { margin-bottom: 0; }
+.mdx-content blockquote strong { color: #67E8F9; }
 .mdx-content hr {
   border: none;
   border-top: 1px solid rgba(255,255,255,0.08);
@@ -227,4 +231,69 @@ html { scroll-behavior: smooth; }
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--border);
+}
+
+/* ── 自製游標（CustomCursor）：精準指標裝置才隱藏系統箭頭 ── */
+@media (pointer: fine) {
+  html.cursor-custom,
+  html.cursor-custom * { cursor: none !important; }
+  /* 文字輸入仍保留系統 I-beam，方便編輯 */
+  html.cursor-custom input,
+  html.cursor-custom textarea,
+  html.cursor-custom [contenteditable="true"] { cursor: text !important; }
+}
+@keyframes cursor-spin {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to   { transform: translate(-50%, -50%) rotate(360deg); }
+}
+/* 游標 hover 鎖定：一道光環轉一圈後淡出（像載入轉圈） */
+@keyframes cursor-sweep {
+  from { transform: translate(-50%, -50%) rotate(0deg);   opacity: 1; }
+  to   { transform: translate(-50%, -50%) rotate(360deg); opacity: 0; }
+}
+
+/* ── 倉庫卡：hover 時一道光沿邊框繞一圈（conic 漸層描邊旋轉） ── */
+@property --repo-a {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+.repo-card { position: relative; isolation: isolate; }
+.repo-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  border-radius: inherit;
+  padding: 1.5px;
+  pointer-events: none;
+  background: conic-gradient(
+    from var(--repo-a),
+    transparent 0deg,
+    var(--accent-cyan) 70deg,
+    #ffffff 100deg,
+    var(--accent-violet) 130deg,
+    transparent 200deg,
+    transparent 360deg
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.repo-card:hover::before {
+  opacity: 1;
+  animation: repo-border-spin 1.6s linear infinite;
+}
+@keyframes repo-border-spin {
+  to { --repo-a: 360deg; }
+}
+/* 不支援 @property 時：退化為靜態柔光邊框（仍比原本明顯） */
+@supports not (background: conic-gradient(from var(--repo-a), #000, #000)) {
+  .repo-card:hover::before { animation: none; opacity: 0.8; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .repo-card:hover::before { animation: none; }
 }

@@ -81,7 +81,7 @@ export function Sidebar({ docs }: SidebarProps) {
         </button>
 
         {mobileOpen && (
-          <nav className="mt-2 rounded-lg border border-border bg-surface p-2">
+          <nav className="mt-2 rounded-lg border border-border bg-surface p-2 max-h-72 overflow-y-auto">
             {renderGroups()}
           </nav>
         )}
