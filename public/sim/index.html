@@ -6,6 +6,8 @@
   <title>ROV 地面站</title>
 
   <!-- 模擬器版：移除 PWA manifest / service worker（避免在 iframe 內以 scope '/' 劫持整個報告站台）。 -->
+  <!-- Vercel 會把 /sim/index.html redirect 到 /sim（無尾斜線），導致相對路徑錯位；base 強制修正。 -->
+  <base href="/sim/">
   <meta name="theme-color" content="#05080f">
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
 
