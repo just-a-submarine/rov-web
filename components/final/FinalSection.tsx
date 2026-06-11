@@ -56,7 +56,7 @@ export function FinalSection({ eyebrow, icon: Icon, accent = "#22D3EE", title, m
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true, margin: "-10%" }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="flex justify-center lg:justify-end w-full"
+            className="flex justify-center lg:justify-end w-full order-first lg:order-none"
           >
             {media}
           </motion.div>
