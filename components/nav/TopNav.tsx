@@ -71,7 +71,7 @@ export function TopNav() {
 
       {/* Mobile menu */}
       {open && (
-        <div className="md:hidden border-t border-border bg-surface max-h-[calc(100dvh-56px)] overflow-y-auto">
+        <div className="md:hidden border-t border-border bg-surface max-h-[calc(100svh-56px)] overflow-y-auto">
           <nav className="max-w-6xl mx-auto px-4 py-3 flex flex-col gap-1">
             {navLinks.map(({ href, label }) => {
               const active = pathname === href || pathname.startsWith(href + "/");

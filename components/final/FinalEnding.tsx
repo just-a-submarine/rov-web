@@ -17,7 +17,7 @@ export function FinalEnding() {
   const reduced = useReducedMotion();
 
   return (
-    <section className="relative min-h-dvh flex flex-col items-center justify-center overflow-hidden px-4 py-24">
+    <section className="relative min-h-svh flex flex-col items-center justify-center overflow-hidden px-4 py-24">
       {/* 背景光暈 */}
       <motion.div
         className="absolute rounded-full blur-3xl pointer-events-none"

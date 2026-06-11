@@ -18,7 +18,7 @@ export function SlideSection({ id, children, className = "" }: SlideSectionProps
     <section
       id={id}
       ref={ref}
-      className={`min-h-dvh flex flex-col items-center justify-center relative overflow-hidden px-4 py-16 ${className}`}
+      className={`min-h-svh flex flex-col items-center justify-center relative overflow-hidden px-4 py-16 ${className}`}
     >
       <motion.div
         initial={{ opacity: 0, y: 30 }}

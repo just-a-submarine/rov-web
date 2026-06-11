@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function SimulatorPage() {
   return (
-    <div className="flex flex-col h-dvh overflow-hidden">
+    <div className="flex flex-col h-svh overflow-hidden">
       {/* 纖細返回列（取代共用 TopNav，避免浮層蓋住儀表板控制） */}
       <header className="flex-none h-12 px-3 flex items-center justify-between glass border-b border-border">
         <Link

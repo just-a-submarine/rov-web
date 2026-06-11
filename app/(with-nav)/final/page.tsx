@@ -22,7 +22,7 @@ export default function FinalPage() {
       {/* ① 封面（炫技動畫背景僅限封面，不影響下方內容） */}
       <section
         id="intro"
-        className="relative min-h-dvh flex flex-col items-center justify-center overflow-hidden px-4 py-16"
+        className="relative min-h-svh flex flex-col items-center justify-center overflow-hidden px-4 py-16"
       >
         <FinalCoverFX />
         <div className="relative z-10">

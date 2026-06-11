@@ -16,7 +16,7 @@ const BubbleField = dynamic(
 
 export default function HomePage() {
   return (
-    <div className="relative min-h-dvh flex flex-col items-center justify-center overflow-hidden">
+    <div className="relative min-h-svh flex flex-col items-center justify-center overflow-hidden">
       {/* Animated particle background */}
       <BubbleField />
 
