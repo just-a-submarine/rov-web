@@ -49,7 +49,7 @@ export function AIAgentSection() {
             height={m.height}
             caption={m.caption}
             aspectClass="aspect-[4/5]"
-            widthClass="max-w-[15rem] md:max-w-none"
+            widthClass="max-w-[15rem] mx-auto md:max-w-none"
           />
         ))}
       </div>
