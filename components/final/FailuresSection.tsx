@@ -112,7 +112,7 @@ export function FailuresSection() {
               <h3 className="text-lg font-bold">接電池開機會自動重啟</h3>
             </div>
             <p className="text-sm leading-relaxed text-muted">
-              因為時間都花在漏水問題上，平時測試全都接 USB，沒發現任何異常。直到最後才接上電池——結果 Wi-Fi 一啟動整台就重啟，推測是啟動瞬間的峰值電流超出電池的供電上限。
+              因為時間都花在漏水問題上，平時測試全都接 USB，沒發現任何異常。直到最後才接上電池——結果一啟動整台就重啟，推測是啟動瞬間的峰值電流超出電池的供電上限。
             </p>
             <p className="text-sm leading-relaxed text-muted">
               嘗試調低 Wi-Fi 發射功率來減少峰值電流。調完之後，垂直馬達、右馬達、電流計全部報銷——跟 Wi-Fi 設定毫無邏輯關係的三樣東西，一起壞掉。到現在也不知道為什麼。調低功率還是有點不穩定，所以最後還是改接 USB 使用。
