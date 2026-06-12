@@ -130,6 +130,13 @@
   window.addEventListener('keyup', onKeyUp);
   window.addEventListener('blur', kbClear);
 
+  // ---------- 禁止雙指縮放（手機雙搖桿操作不該觸發頁面 pinch-zoom）----------
+  // iOS Safari 會忽略 viewport 的 user-scalable=no，故攔 gesture 事件擋頁面縮放；
+  // 地圖頁的 Leaflet 用自己的 touch 事件算 pinch（不吃 gesture 事件），縮放不受影響。
+  ['gesturestart', 'gesturechange', 'gestureend'].forEach(function (t) {
+    document.addEventListener(t, function (e) { e.preventDefault(); }, { passive: false });
+  });
+
   // ---------- 幾何 ----------
   function haversine(a, b) {
     var R = 6371000, t = Math.PI / 180;
