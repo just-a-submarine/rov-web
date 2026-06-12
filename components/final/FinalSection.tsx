@@ -26,26 +26,13 @@ export function FinalSection({ eyebrow, icon: Icon, accent = "#22D3EE", title, m
   return (
     <div className="w-full max-w-5xl mx-auto px-4">
       <div className={`grid items-center gap-8 lg:gap-12 ${hasMedia ? "lg:grid-cols-2" : "max-w-2xl mx-auto"}`}>
-        {/* 媒體（DOM 排第一 → 手機顯示在上；桌機靠 lg:order-last 移到右欄） */}
-        {hasMedia && (
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, margin: "-10%" }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="flex justify-center lg:justify-end w-full lg:order-last"
-          >
-            {media}
-          </motion.div>
-        )}
-
-        {/* 文字（桌機靠 lg:order-first 移到左欄） */}
+        {/* 文字（手機在上、桌機在左）— 預設 DOM 順序，不用 order 特技 */}
         <motion.div
           initial={{ opacity: 0, x: hasMedia ? -20 : 0, y: hasMedia ? 0 : 16 }}
           whileInView={{ opacity: 1, x: 0, y: 0 }}
           viewport={{ once: true, margin: "-10%" }}
           transition={{ duration: 0.5 }}
-          className={`flex flex-col gap-4 ${hasMedia ? "text-center lg:text-left lg:order-first" : "text-center"}`}
+          className={`flex flex-col gap-4 ${hasMedia ? "text-center lg:text-left" : "text-center"}`}
         >
           <div className={`flex items-center gap-3 ${hasMedia ? "justify-center lg:justify-start" : "justify-center"}`}>
             <span
@@ -61,6 +48,19 @@ export function FinalSection({ eyebrow, icon: Icon, accent = "#22D3EE", title, m
           <h2 className="text-3xl sm:text-4xl font-bold text-foreground leading-tight">{title}</h2>
           <div className="flex flex-col gap-3 text-sm sm:text-base leading-relaxed text-muted">{children}</div>
         </motion.div>
+
+        {/* 媒體（手機在下、桌機在右）— DOM 順序在文字之後 */}
+        {hasMedia && (
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, margin: "-10%" }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="flex justify-center lg:justify-end w-full"
+          >
+            {media}
+          </motion.div>
+        )}
       </div>
     </div>
   );
