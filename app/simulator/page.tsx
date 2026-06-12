@@ -30,13 +30,17 @@ export default function SimulatorPage() {
         </span>
       </header>
 
-      {/* 真實手機儀表板（沿用 Ground-Station 網頁），由 sim-engine.js 餵假遙測 */}
-      <iframe
-        src="/sim/index.html"
-        title="潛水艇儀表板模擬器"
-        className="flex-1 w-full border-0 block bg-black"
-        allow="fullscreen; gamepad"
-      />
+      {/* 真實手機儀表板（沿用 Ground-Station 網頁），由 sim-engine.js 餵假遙測。
+          iframe 用絕對定位填滿外層 flex 容器：Safari/WebKit 不會用 flex-grow 撐高
+          replaced element（iframe 會塌回預設 ~150px），故不能讓 iframe 直接吃 flex-1。 */}
+      <div className="relative flex-1 min-h-0 w-full">
+        <iframe
+          src="/sim/index.html"
+          title="潛水艇儀表板模擬器"
+          className="absolute inset-0 h-full w-full border-0 block bg-black"
+          allow="fullscreen; gamepad"
+        />
+      </div>
     </div>
   );
 }
