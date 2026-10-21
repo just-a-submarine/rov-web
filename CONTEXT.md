@@ -152,6 +152,10 @@ Vercel 部署的純前端網站（Next.js 16 + Tailwind v4），用於電子學�
 - 本次新增 `components/docs/Callout.tsx`（純色提示框、無圖示相依），並接進 docs 頁的 MDX `components`。
 - **文件導覽全面升級**：側邊欄依 frontmatter `category` 分四組；右側「本頁目錄」(`TableOfContents`，IntersectionObserver 捲動高亮)；標題錨點 id（`lib/toc.ts` 的 `rehypeHeadingIds`）；頁尾上一篇/下一篇（`DocPager`）。目錄與錨點 id 共用 `lib/toc.ts` 同一 slugger，已 runtime 驗證 `href="#…"` 與 `id="…"` 完全一致。
 
+## 依賴安全（2026-10-22）
+- Next.js `16.2.3` → `16.4.2`（`eslint-config-next` 同步；`package.json` 維持**精確版本**，不用 `^`）。修 2026-08 Windows 路徑穿越／AVIF（CVE-2026-75604）與 2026-10 sharp RCE（CVE-2026-96889）、Server Action DoS。sharp 隨之 `0.34.5` → `0.35.5`。
+- 本站 `images.unoptimized: true`、無 Server Actions、無 `use cache`，原本實際風險就低；升級是保險。之後 Next.js 出安全公告，至少升到該公告的修補版。
+
 ## 關鍵約定（容易踩坑）
 1. **文件來源關係**：權威來源 `secret/文件/*.md`（gitignore）→ 網站 `content/docs/*.mdx`。改文件先改來源再同步（並補 frontmatter `category`）。
 2. **MDX 提示框**：用 `<Callout type="info|warning|success|danger" title="…">…</Callout>`。元件已在 `app/(with-nav)/docs/[slug]/page.tsx` 的 `components` map 注入，**MDX 內不要寫 `import`**（remote MDX 解析不了路徑，會 `Module not found`）。
